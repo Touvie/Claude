@@ -1023,16 +1023,16 @@
                     // Quaternion actuel (figé)
                     const currentQuat = frozenRingQuaternions[ringIdx];
 
-                    // Créer le quaternion cible - jointures horizontales (équateur)
+                    // Créer le quaternion cible - jointures face caméra
                     const targetQuat = new THREE.Quaternion();
-                    // Étape 1 : Rotation autour de Z (pour orienter)
-                    const quatAlign = new THREE.Quaternion();
-                    quatAlign.setFromAxisAngle(new THREE.Vector3(0, 0, 1), alignRotation);
-                    // Étape 2 : Inclinaison autour de X (pour écarter les anneaux)
+                    // Étape 1 : Inclinaison autour de X (pour jointures est/ouest, puis face caméra)
                     const quatTilt = new THREE.Quaternion();
                     quatTilt.setFromAxisAngle(new THREE.Vector3(1, 0, 0), tiltAngle);
-                    // Combiner : d'abord align, puis tilt (ordre inversé!)
-                    targetQuat.multiplyQuaternions(quatTilt, quatAlign);
+                    // Étape 2 : Rotation autour de Z
+                    const quatAlign = new THREE.Quaternion();
+                    quatAlign.setFromAxisAngle(new THREE.Vector3(0, 0, 1), alignRotation);
+                    // Combiner : d'abord tilt, puis align
+                    targetQuat.multiplyQuaternions(quatAlign, quatTilt);
 
                     // SLERP (interpolation sphérique) entre quaternions
                     const interpQuat = new THREE.Quaternion();
