@@ -1015,31 +1015,36 @@
                 // TEST DIRECT : Appliquer les coordonnées finales sans SLERP pour déboguer
                 const targetTilts = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
                 const alignRotation = 20 * Math.PI / 180; // 20° autour de Z
+                const horizontalRotation = Math.PI / 2; // 90° pour mettre les anneaux à l'horizontal
 
                 for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
                     const baseIndex = ringIdx * particlesPerRing;
                     const tiltAngle = targetTilts[ringIdx];
 
                     // Appliquer DIRECTEMENT les rotations (ignorer SLERP pour tester)
-                    // Rotation 1 : 20° autour de Z
+                    // Rotation 1 : 90° autour de X pour passer du plan XY vertical au plan XZ horizontal
+                    const cX1 = Math.cos(horizontalRotation);
+                    const sX1 = Math.sin(horizontalRotation);
+
+                    // Rotation 2 : 20° autour de Z pour aligner la jointure
                     const cZ = Math.cos(alignRotation);
                     const sZ = Math.sin(alignRotation);
 
-                    // Rotation 2 : inclinaison autour de X
-                    const cX = Math.cos(tiltAngle);
-                    const sX = Math.sin(tiltAngle);
+                    // Rotation 3 : inclinaison autour de Y (dans le plan horizontal)
+                    const cY = Math.cos(tiltAngle);
+                    const sY = Math.sin(tiltAngle);
 
-                    // Matrice combinée : d'abord Z, puis X
-                    // R = Rx * Rz
-                    const r00 = cZ;
-                    const r01 = -sZ * cX;
-                    const r02 = -sZ * sX;
+                    // Matrice combinée : R = Ry * Rz * Rx
+                    // D'abord Rx (horizontal), puis Rz (alignement), puis Ry (inclinaison)
+                    const r00 = cY * cZ;
+                    const r01 = cY * sZ * cX1 - sY * sX1;
+                    const r02 = cY * sZ * sX1 + sY * cX1;
                     const r10 = sZ;
-                    const r11 = cZ * cX;
-                    const r12 = cZ * sX;
-                    const r20 = 0;
-                    const r21 = -sX;
-                    const r22 = cX;
+                    const r11 = -cZ * cX1;
+                    const r12 = -cZ * sX1;
+                    const r20 = -sY * cZ;
+                    const r21 = -sY * sZ * cX1 - cY * sX1;
+                    const r22 = -sY * sZ * sX1 + cY * cX1;
 
                     // Appliquer aux positions DE BASE
                     for (let i = 0; i < particlesPerRing; i++) {
@@ -1067,8 +1072,10 @@
 
                 const photonPositionsArray = photonRingGeometry.attributes.position.array;
 
-                // Les 3 anneaux cibles avec inclinaisons 0°, 15°, 30°
-                const targetTilts = [0, Math.PI / 12, Math.PI / 6]; // 0°, 15°, 30°
+                // Les 3 anneaux cibles avec inclinaisons dans le plan horizontal
+                const targetTilts = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
+                const alignRotation = 20 * Math.PI / 180; // 20° autour de Z
+                const horizontalRotation = Math.PI / 2; // 90° pour mettre à l'horizontal
 
                 for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
                     const baseIndex = ringIdx * particlesPerRing;
@@ -1077,9 +1084,20 @@
                     // Quaternion actuel (figé)
                     const currentQuat = frozenRingQuaternions[ringIdx];
 
-                    // Créer le quaternion cible (juste inclinaison autour de X)
+                    // Créer le quaternion cible avec rotations combinées
+                    // R = Ry * Rz * Rx (inclinaison, alignement, horizontal)
+                    const qX = new THREE.Quaternion();
+                    qX.setFromAxisAngle(new THREE.Vector3(1, 0, 0), horizontalRotation);
+
+                    const qZ = new THREE.Quaternion();
+                    qZ.setFromAxisAngle(new THREE.Vector3(0, 0, 1), alignRotation);
+
+                    const qY = new THREE.Quaternion();
+                    qY.setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetTilt);
+
                     const targetQuat = new THREE.Quaternion();
-                    targetQuat.setFromAxisAngle(new THREE.Vector3(1, 0, 0), targetTilt);
+                    targetQuat.multiplyQuaternions(qY, qZ);
+                    targetQuat.multiply(qX);
 
                     // SLERP (interpolation sphérique) entre quaternions
                     const interpQuat = new THREE.Quaternion();
