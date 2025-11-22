@@ -832,20 +832,37 @@
         scene.add(eventHorizon);
 
         // Helper pour visualiser les axes : Rouge=X, Vert=Y, Bleu=Z
-        const createAxis = (color, direction) => {
+        const createAxis = (color, direction, size = 50) => {
+            const group = new THREE.Group();
+
+            // Ligne d'axe
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array([
                 0, 0, 0,
-                direction.x * 30, direction.y * 30, direction.z * 30
+                direction.x * size, direction.y * size, direction.z * size
             ]);
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             const material = new THREE.LineBasicMaterial({
                 color: color,
-                linewidth: 3,
+                linewidth: 5,
                 depthTest: false,
                 depthWrite: false
             });
-            return new THREE.Line(geometry, material);
+            const line = new THREE.Line(geometry, material);
+            group.add(line);
+
+            // Sphère à l'extrémité
+            const sphereGeometry = new THREE.SphereGeometry(2, 16, 16);
+            const sphereMaterial = new THREE.MeshBasicMaterial({
+                color: color,
+                depthTest: false,
+                depthWrite: false
+            });
+            const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            sphere.position.set(direction.x * size, direction.y * size, direction.z * size);
+            group.add(sphere);
+
+            return group;
         };
 
         const axisX = createAxis(0xff0000, new THREE.Vector3(1, 0, 0)); // Rouge X
