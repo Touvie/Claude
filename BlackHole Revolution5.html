@@ -518,6 +518,31 @@
         for (let i = 0; i < photonRingCount * 3; i++) {
             photonInitialPositions[i] = photonPositions[i];
         }
+
+        // Stocker les VRAIES positions de base (cercle plat, avant toute rotation)
+        // En inversant la rotation initiale qui a été appliquée
+        const photonBasePositions = new Float32Array(photonRingCount * 3);
+        for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
+            const baseIndex = ringIdx * particlesPerRing;
+            const initialTilt = (ringIdx * Math.PI / 36); // 0°, 5°, 10° - rotation initiale
+
+            for (let i = 0; i < particlesPerRing; i++) {
+                const idx = baseIndex + i;
+
+                // Position actuelle (après rotation initiale)
+                const x = photonInitialPositions[idx * 3];
+                const yRotated = photonInitialPositions[idx * 3 + 1];
+                const zRotated = photonInitialPositions[idx * 3 + 2];
+
+                // Inverser la rotation initiale pour obtenir le cercle plat de base
+                const y = yRotated * Math.cos(initialTilt) + zRotated * Math.sin(initialTilt);
+                const z = -yRotated * Math.sin(initialTilt) + zRotated * Math.cos(initialTilt);
+
+                photonBasePositions[idx * 3] = x;
+                photonBasePositions[idx * 3 + 1] = y;
+                photonBasePositions[idx * 3 + 2] = z;
+            }
+        }
         
         const photonRingMaterial = new THREE.ShaderMaterial({
             uniforms: {
@@ -987,9 +1012,9 @@
 
                 const photonPositionsArray = photonRingGeometry.attributes.position.array;
 
-                // Inclinaisons cibles : -20°, 0°, +20° autour de l'axe Y
+                // VOS COORDONNÉES : Inclinaisons -20°, 0°, +20° autour Y + rotation 20° autour Z
                 const targetTilts = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
-                const alignRotation = 20 * Math.PI / 180; // Rotation commune de 20° autour de Z
+                const alignRotation = 20 * Math.PI / 180; // 20° autour de Z
 
                 for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
                     const baseIndex = ringIdx * particlesPerRing;
@@ -998,12 +1023,12 @@
                     // Quaternion actuel (figé)
                     const currentQuat = frozenRingQuaternions[ringIdx];
 
-                    // Créer le quaternion cible (inclinaison autour de Y + rotation Z)
+                    // Créer le quaternion cible EXACTEMENT comme vous l'avez spécifié
                     const targetQuat = new THREE.Quaternion();
-                    // Première rotation : inclinaison autour de Y
+                    // Étape 1 : Inclinaison autour de Y
                     const quatTilt = new THREE.Quaternion();
                     quatTilt.setFromAxisAngle(new THREE.Vector3(0, 1, 0), tiltAngle);
-                    // Deuxième rotation : rotation autour de Z
+                    // Étape 2 : Rotation autour de Z
                     const quatAlign = new THREE.Quaternion();
                     quatAlign.setFromAxisAngle(new THREE.Vector3(0, 0, 1), alignRotation);
                     // Combiner : d'abord tilt, puis align
@@ -1017,20 +1042,20 @@
                     const matrix = new THREE.Matrix4();
                     matrix.makeRotationFromQuaternion(interpQuat);
 
-                    // Extraire les composants de la matrice (comme en mode normal)
+                    // Extraire les composants de la matrice
                     const m = matrix.elements;
                     const r00 = m[0], r01 = m[4], r02 = m[8];
                     const r10 = m[1], r11 = m[5], r12 = m[9];
                     const r20 = m[2], r21 = m[6], r22 = m[10];
 
-                    // Appliquer la rotation interpolée aux positions INITIALES (comme en mode normal)
+                    // Appliquer aux positions DE BASE (cercle plat d'origine)
                     for (let i = 0; i < particlesPerRing; i++) {
                         const idx = baseIndex + i;
 
-                        // Utiliser les positions initiales, pas reconstruire le cercle !
-                        const px = photonInitialPositions[idx * 3];
-                        const py = photonInitialPositions[idx * 3 + 1];
-                        const pz = photonInitialPositions[idx * 3 + 2];
+                        // Utiliser les VRAIES positions de base (cercle plat)
+                        const px = photonBasePositions[idx * 3];
+                        const py = photonBasePositions[idx * 3 + 1];
+                        const pz = photonBasePositions[idx * 3 + 2];
 
                         photonPositionsArray[idx * 3]     = r00*px + r01*py + r02*pz;
                         photonPositionsArray[idx * 3 + 1] = r10*px + r11*py + r12*pz;
