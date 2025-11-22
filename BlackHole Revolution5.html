@@ -883,13 +883,25 @@
         
         let isRegrouping = false; // État du regroupement pour le test
         let regroupTestStartTime = 0;
-        
+
+        // Capturer les états initiaux des anneaux au début de l'animation
+        const frozenRingStates = [
+            { axis: null, rotation: 0 },
+            { axis: null, rotation: 0 },
+            { axis: null, rotation: 0 }
+        ];
+
         // Fonction globale pour le bouton
         window.toggleRegroup = function() {
             isRegrouping = !isRegrouping;
             const btn = document.getElementById('regroup-button');
-            
+
             if (isRegrouping) {
+                // Figer les états actuels des anneaux
+                for (let i = 0; i < numRings; i++) {
+                    frozenRingStates[i].axis = ringAxes[i].clone();
+                    frozenRingStates[i].rotation = ringRotations[i];
+                }
                 regroupTestStartTime = Date.now();
                 btn.textContent = '❌ Stop';
                 btn.style.background = 'rgba(255, 0, 0, 0.5)';
@@ -934,6 +946,11 @@
         
         enterButton.addEventListener('click', () => {
             if (!isAnimating) {
+                // Figer les états actuels des anneaux
+                for (let i = 0; i < numRings; i++) {
+                    frozenRingStates[i].axis = ringAxes[i].clone();
+                    frozenRingStates[i].rotation = ringRotations[i];
+                }
                 isAnimating = true;
                 animationStartTime = Date.now();
                 enterButton.classList.add('hidden');
@@ -987,52 +1004,69 @@
                     const baseIndex = ringIdx * particlesPerRing;
                     const tiltAngle = targetTilts[ringIdx];
 
-                    // Positions actuelles de l'anneau (en rotation chaotique)
-                    const currentAxis = ringAxes[ringIdx];
-                    const currentRotation = ringRotations[ringIdx];
+                    // États figés au début de l'animation
+                    const frozenAxis = frozenRingStates[ringIdx].axis;
+                    const frozenRotation = frozenRingStates[ringIdx].rotation;
+
+                    // Axe cible : X pour l'inclinaison
+                    const targetAxis = new THREE.Vector3(1, 0, 0);
+
+                    // Interpoler l'axe de rotation (slerp pour rotation sphérique)
+                    const interpAxis = new THREE.Vector3();
+                    interpAxis.lerpVectors(frozenAxis, targetAxis, t);
+                    interpAxis.normalize();
+
+                    // Calculer la matrice de rotation cible finale
+                    // Étape 1 : inclinaison autour de X
+                    const cTilt = Math.cos(tiltAngle);
+                    const sTilt = Math.sin(tiltAngle);
+
+                    // Étape 2 : rotation autour de Z
+                    const cAlign = Math.cos(alignRotation);
+                    const sAlign = Math.sin(alignRotation);
+
+                    // Matrice combinée pour la position cible
+                    const rt00 = cAlign*cTilt,          rt01 = -sAlign,  rt02 = cAlign*sTilt;
+                    const rt10 = sAlign*cTilt,          rt11 = cAlign,   rt12 = sAlign*sTilt;
+                    const rt20 = -sTilt,                rt21 = 0,        rt22 = cTilt;
+
+                    // Interpoler l'angle de rotation
+                    const interpRotation = frozenRotation * (1 - t);
+
+                    // Matrice de rotation pour l'état figé
+                    const c = Math.cos(interpRotation);
+                    const s = Math.sin(interpRotation);
+                    const tr = 1 - c;
+                    const x = interpAxis.x, y = interpAxis.y, z = interpAxis.z;
+
+                    const r00 = tr*x*x + c,      r01 = tr*x*y - s*z,  r02 = tr*x*z + s*y;
+                    const r10 = tr*x*y + s*z,    r11 = tr*y*y + c,    r12 = tr*y*z - s*x;
+                    const r20 = tr*x*z - s*y,    r21 = tr*y*z + s*x,  r22 = tr*z*z + c;
 
                     for (let i = 0; i < particlesPerRing; i++) {
                         const idx = baseIndex + i;
                         const angle = (i / particlesPerRing) * Math.PI * 2;
                         const radius = photonRadiusMin + (photonRadiusMax - photonRadiusMin) * 0.5;
 
-                        // Position actuelle (rotation chaotique)
+                        // Position de base du cercle
                         const baseX = Math.cos(angle) * radius;
                         const baseY = Math.sin(angle) * radius;
                         const baseZ = 0;
 
-                        const c = Math.cos(currentRotation);
-                        const s = Math.sin(currentRotation);
-                        const t_rot = 1 - c;
-                        const x = currentAxis.x, y = currentAxis.y, z = currentAxis.z;
-
-                        const r00 = t_rot*x*x + c,      r01 = t_rot*x*y - s*z,  r02 = t_rot*x*z + s*y;
-                        const r10 = t_rot*x*y + s*z,    r11 = t_rot*y*y + c,    r12 = t_rot*y*z - s*x;
-                        const r20 = t_rot*x*z - s*y,    r21 = t_rot*y*z + s*x,  r22 = t_rot*z*z + c;
-
-                        const currentX = r00*baseX + r01*baseY + r02*baseZ;
-                        const currentY = r10*baseX + r11*baseY + r12*baseZ;
-                        const currentZ = r20*baseX + r21*baseY + r22*baseZ;
+                        // Appliquer rotation interpolée (état figé qui pivote)
+                        const rotatedX = r00*baseX + r01*baseY + r02*baseZ;
+                        const rotatedY = r10*baseX + r11*baseY + r12*baseZ;
+                        const rotatedZ = r20*baseX + r21*baseY + r22*baseZ;
 
                         // Position cible finale
-                        let targetX = Math.cos(angle) * radius;
-                        let targetY = 0;
-                        let targetZ = Math.sin(angle) * radius;
+                        const targetX = rt00*baseX + rt01*baseY + rt02*baseZ;
+                        const targetY = rt10*baseX + rt11*baseY + rt12*baseZ;
+                        const targetZ = rt20*baseX + rt21*baseY + rt22*baseZ;
 
-                        // Appliquer inclinaison autour de X
-                        const xRot = targetX * Math.cos(tiltAngle) - targetY * Math.sin(tiltAngle);
-                        const yRot = targetX * Math.sin(tiltAngle) + targetY * Math.cos(tiltAngle);
-                        const zRot = targetZ;
-
-                        // Appliquer rotation autour de Z
-                        const xFinal = xRot * Math.cos(alignRotation) - zRot * Math.sin(alignRotation);
-                        const yFinal = yRot;
-                        const zFinal = xRot * Math.sin(alignRotation) + zRot * Math.cos(alignRotation);
-
-                        // Interpolation linéaire entre position actuelle et position cible
-                        photonPositionsArray[idx * 3]     = currentX + (xFinal - currentX) * t;
-                        photonPositionsArray[idx * 3 + 1] = currentY + (yFinal - currentY) * t;
-                        photonPositionsArray[idx * 3 + 2] = currentZ + (zFinal - currentZ) * t;
+                        // Interpoler entre rotation actuelle et cible
+                        photonPositionsArray[idx * 3]     = rotatedX + (targetX - rotatedX) * t;
+                        photonPositionsArray[idx * 3 + 1] = rotatedY + (targetY - rotatedY) * t;
+                        photonPositionsArray[idx * 3 + 2] = rotatedZ + (targetZ - rotatedZ) * t;
                     }
                 }
 
@@ -1054,50 +1088,63 @@
                     const baseIndex = ringIdx * particlesPerRing;
                     const targetTilt = targetTilts[ringIdx];
 
-                    // Positions actuelles de l'anneau (en rotation chaotique)
-                    const currentAxis = ringAxes[ringIdx];
-                    const currentRotation = ringRotations[ringIdx];
+                    // États figés au début de l'animation
+                    const frozenAxis = frozenRingStates[ringIdx].axis;
+                    const frozenRotation = frozenRingStates[ringIdx].rotation;
+
+                    // Axe cible : X pour l'inclinaison
+                    const targetAxis = new THREE.Vector3(1, 0, 0);
+
+                    // Interpoler l'axe de rotation
+                    const interpAxis = new THREE.Vector3();
+                    interpAxis.lerpVectors(frozenAxis, targetAxis, t);
+                    interpAxis.normalize();
+
+                    // Matrice de rotation cible finale (juste inclinaison autour de X)
+                    const cTilt = Math.cos(targetTilt);
+                    const sTilt = Math.sin(targetTilt);
+
+                    const rt00 = 1,     rt01 = 0,      rt02 = 0;
+                    const rt10 = 0,     rt11 = cTilt,  rt12 = -sTilt;
+                    const rt20 = 0,     rt21 = sTilt,  rt22 = cTilt;
+
+                    // Interpoler l'angle de rotation
+                    const interpRotation = frozenRotation * (1 - t);
+
+                    // Matrice de rotation pour l'état figé
+                    const c = Math.cos(interpRotation);
+                    const s = Math.sin(interpRotation);
+                    const tr = 1 - c;
+                    const x = interpAxis.x, y = interpAxis.y, z = interpAxis.z;
+
+                    const r00 = tr*x*x + c,      r01 = tr*x*y - s*z,  r02 = tr*x*z + s*y;
+                    const r10 = tr*x*y + s*z,    r11 = tr*y*y + c,    r12 = tr*y*z - s*x;
+                    const r20 = tr*x*z - s*y,    r21 = tr*y*z + s*x,  r22 = tr*z*z + c;
 
                     for (let i = 0; i < particlesPerRing; i++) {
                         const idx = baseIndex + i;
                         const angle = (i / particlesPerRing) * Math.PI * 2;
                         const radius = photonRadiusMin + (photonRadiusMax - photonRadiusMin) * 0.5;
 
-                        // Position actuelle (rotation chaotique)
+                        // Position de base du cercle
                         const baseX = Math.cos(angle) * radius;
                         const baseY = Math.sin(angle) * radius;
                         const baseZ = 0;
 
-                        const c = Math.cos(currentRotation);
-                        const s = Math.sin(currentRotation);
-                        const t_rot = 1 - c;
-                        const x = currentAxis.x, y = currentAxis.y, z = currentAxis.z;
+                        // Appliquer rotation interpolée (état figé qui pivote)
+                        const rotatedX = r00*baseX + r01*baseY + r02*baseZ;
+                        const rotatedY = r10*baseX + r11*baseY + r12*baseZ;
+                        const rotatedZ = r20*baseX + r21*baseY + r22*baseZ;
 
-                        const r00 = t_rot*x*x + c,      r01 = t_rot*x*y - s*z,  r02 = t_rot*x*z + s*y;
-                        const r10 = t_rot*x*y + s*z,    r11 = t_rot*y*y + c,    r12 = t_rot*y*z - s*x;
-                        const r20 = t_rot*x*z - s*y,    r21 = t_rot*y*z + s*x,  r22 = t_rot*z*z + c;
+                        // Position cible finale
+                        const targetX = rt00*baseX + rt01*baseY + rt02*baseZ;
+                        const targetY = rt10*baseX + rt11*baseY + rt12*baseZ;
+                        const targetZ = rt20*baseX + rt21*baseY + rt22*baseZ;
 
-                        const currentX = r00*baseX + r01*baseY + r02*baseZ;
-                        const currentY = r10*baseX + r11*baseY + r12*baseZ;
-                        const currentZ = r20*baseX + r21*baseY + r22*baseZ;
-
-                        // Position cible : anneau incliné, centré sur (0,0,0)
-                        // Anneau horizontal de base
-                        let targetX = Math.cos(angle) * radius;
-                        let targetY = Math.sin(angle) * radius;
-                        let targetZ = 0;
-
-                        // Appliquer l'inclinaison autour de l'axe X (pour créer les anneaux inclinés)
-                        const yRotated = targetY * Math.cos(targetTilt) - targetZ * Math.sin(targetTilt);
-                        const zRotated = targetY * Math.sin(targetTilt) + targetZ * Math.cos(targetTilt);
-
-                        targetY = yRotated;
-                        targetZ = zRotated;
-
-                        // Interpolation vers la position cible
-                        photonPositionsArray[idx * 3]     = currentX + (targetX - currentX) * t;
-                        photonPositionsArray[idx * 3 + 1] = currentY + (targetY - currentY) * t;
-                        photonPositionsArray[idx * 3 + 2] = currentZ + (targetZ - currentZ) * t;
+                        // Interpoler entre rotation actuelle et cible
+                        photonPositionsArray[idx * 3]     = rotatedX + (targetX - rotatedX) * t;
+                        photonPositionsArray[idx * 3 + 1] = rotatedY + (targetY - rotatedY) * t;
+                        photonPositionsArray[idx * 3 + 2] = rotatedZ + (targetZ - rotatedZ) * t;
                     }
                 }
 
