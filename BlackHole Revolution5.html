@@ -449,11 +449,16 @@
             0.030 + Math.random() * 0.010
         ]; // Vitesses très rapides entre 0.030 et 0.040
         
-        const ringAxes = [
-            new THREE.Vector3(0, 1, 0), // Axe Y pour anneaux verticaux passant par les pôles
-            new THREE.Vector3(0, 1, 0),
-            new THREE.Vector3(0, 1, 0)
-        ]; // Axes de rotation vertical (Y)
+        // Générer des axes de rotation aléatoires pour chaque anneau
+        const ringAxes = [];
+        for (let i = 0; i < numRings; i++) {
+            const axis = new THREE.Vector3(
+                Math.random() * 2 - 1,
+                Math.random() * 2 - 1,
+                Math.random() * 2 - 1
+            ).normalize();
+            ringAxes.push(axis);
+        }
 
         // Axes cibles pour le regroupement (jonction à l'équateur)
         const targetAxes = [
