@@ -874,12 +874,12 @@
         scene.add(axisZ);
 
         const fixedCameraPosition = {
-            x: -8,
+            x: 0,
             y: 6,
             z: 25,
-            radius: 27,
-            theta: 1.891,
-            phi: 1.325
+            radius: 25.71,
+            theta: 1.571,
+            phi: 1.336
         };
         
         let cameraDistance = fixedCameraPosition.radius;
@@ -1054,9 +1054,9 @@
 
                 const photonPositionsArray = photonRingGeometry.attributes.position.array;
 
-                // VOS COORDONNÉES : Inclinaisons -20°, 0°, +20° autour Y + rotation -17.74° autour Z
+                // VOS COORDONNÉES : Inclinaisons -20°, 0°, +20° autour Y + rotation 0° autour Z
                 const targetTilts = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
-                const alignRotation = -17.74 * Math.PI / 180; // Rotation Z pour orienter jonction vers caméra
+                const alignRotation = 0; // Rotation Z pour orienter jonction vers caméra
 
                 for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
                     const baseIndex = ringIdx * particlesPerRing;
@@ -1118,9 +1118,9 @@
 
                 const photonPositionsArray = photonRingGeometry.attributes.position.array;
 
-                // Jonction à l'équateur : Inclinaisons -20°, 0°, +20° autour Y + rotation -17.74° autour Z
+                // Jonction à l'équateur : Inclinaisons -20°, 0°, +20° autour Y + rotation 0° autour Z
                 const targetTilts = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
-                const alignRotation = -17.74 * Math.PI / 180; // Rotation Z pour orienter jonction vers caméra
+                const alignRotation = 0; // Rotation Z pour orienter jonction vers caméra
 
                 for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
                     const baseIndex = ringIdx * particlesPerRing;
