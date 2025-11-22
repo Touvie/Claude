@@ -1001,69 +1001,71 @@
             
             // Animation des anneaux
             if (isRegrouping) {
-                // Mode test : regroupement continu
+                // Mode test : regroupement avec interpolation SLERP
                 const elapsed = Date.now() - regroupTestStartTime;
                 const regroupProgress = Math.min(elapsed / regroupementDuration, 1);
 
-                // Courbe ease-in-out pour plus de fluidité
+                // Courbe ease-in-out pour animation fluide
                 const t = regroupProgress < 0.5
                     ? 2 * regroupProgress * regroupProgress
                     : 1 - Math.pow(-2 * regroupProgress + 2, 2) / 2;
 
                 const photonPositionsArray = photonRingGeometry.attributes.position.array;
 
-                // TEST DIRECT : Appliquer les coordonnées finales sans SLERP pour déboguer
-                const targetTilts = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
-                const alignRotation = 20 * Math.PI / 180; // 20° autour de Z
-                const horizontalRotation = Math.PI / 2; // 90° pour mettre les anneaux à l'horizontal
+                // Les 3 anneaux cibles horizontaux avec inclinaisons légères
+                const targetTilts = [-Math.PI / 18, 0, Math.PI / 18]; // -10°, 0°, +10° (réduit pour être plus plat)
 
                 for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
                     const baseIndex = ringIdx * particlesPerRing;
-                    const tiltAngle = targetTilts[ringIdx];
+                    const targetTilt = targetTilts[ringIdx];
 
-                    // Appliquer DIRECTEMENT les rotations (ignorer SLERP pour tester)
-                    // Rotation 1 : 90° autour de X pour passer du plan XY vertical au plan XZ horizontal
-                    const cX1 = Math.cos(horizontalRotation);
-                    const sX1 = Math.sin(horizontalRotation);
+                    // Quaternion actuel (figé au début de l'animation)
+                    const currentQuat = frozenRingQuaternions[ringIdx];
 
-                    // Rotation 2 : 20° autour de Z pour aligner la jointure
-                    const cZ = Math.cos(alignRotation);
-                    const sZ = Math.sin(alignRotation);
+                    // Créer le quaternion cible : anneaux horizontaux dans le plan XZ
+                    // Rotation 1: 90° autour de X pour mettre à l'horizontal (plan XY -> XZ)
+                    const qX = new THREE.Quaternion();
+                    qX.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
 
-                    // Rotation 3 : inclinaison autour de Y (dans le plan horizontal)
-                    const cY = Math.cos(tiltAngle);
-                    const sY = Math.sin(tiltAngle);
+                    // Rotation 2: légère inclinaison autour de Z pour l'effet 3D
+                    const qZ = new THREE.Quaternion();
+                    qZ.setFromAxisAngle(new THREE.Vector3(0, 0, 1), targetTilt);
 
-                    // Matrice combinée : R = Ry * Rz * Rx
-                    // D'abord Rx (horizontal), puis Rz (alignement), puis Ry (inclinaison)
-                    const r00 = cY * cZ;
-                    const r01 = cY * sZ * cX1 - sY * sX1;
-                    const r02 = cY * sZ * sX1 + sY * cX1;
-                    const r10 = sZ;
-                    const r11 = -cZ * cX1;
-                    const r12 = -cZ * sX1;
-                    const r20 = -sY * cZ;
-                    const r21 = -sY * sZ * cX1 - cY * sX1;
-                    const r22 = -sY * sZ * sX1 + cY * cX1;
+                    // Combiner les rotations : d'abord horizontal, puis inclinaison
+                    const targetQuat = new THREE.Quaternion();
+                    targetQuat.multiplyQuaternions(qZ, qX);
 
-                    // Appliquer aux positions DE BASE
+                    // SLERP (interpolation sphérique) entre quaternions pour animation fluide
+                    const interpQuat = new THREE.Quaternion();
+                    interpQuat.slerpQuaternions(currentQuat, targetQuat, t);
+
+                    // Convertir le quaternion interpolé en matrice
+                    const matrix = new THREE.Matrix4();
+                    matrix.makeRotationFromQuaternion(interpQuat);
+
+                    // Appliquer la matrice interpolée à chaque particule
                     for (let i = 0; i < particlesPerRing; i++) {
                         const idx = baseIndex + i;
 
-                        // Utiliser les positions de base
-                        const px = photonBasePositions[idx * 3];
-                        const py = photonBasePositions[idx * 3 + 1];
-                        const pz = photonBasePositions[idx * 3 + 2];
+                        // Utiliser les positions de base (cercle plat)
+                        const basePos = new THREE.Vector3(
+                            photonBasePositions[idx * 3],
+                            photonBasePositions[idx * 3 + 1],
+                            photonBasePositions[idx * 3 + 2]
+                        );
 
-                        photonPositionsArray[idx * 3]     = r00*px + r01*py + r02*pz;
-                        photonPositionsArray[idx * 3 + 1] = r10*px + r11*py + r12*pz;
-                        photonPositionsArray[idx * 3 + 2] = r20*px + r21*py + r22*pz;
+                        // Appliquer la transformation interpolée
+                        basePos.applyMatrix4(matrix);
+
+                        photonPositionsArray[idx * 3]     = basePos.x;
+                        photonPositionsArray[idx * 3 + 1] = basePos.y;
+                        photonPositionsArray[idx * 3 + 2] = basePos.z;
                     }
                 }
 
                 photonRingGeometry.attributes.position.needsUpdate = true;
             } else if (isAnimating && !regroupementComplete) {
-                // Phase 1: Regroupement avec jonction face caméra (0-3 secondes)
+                // Phase 1: Regroupement avec anneaux horizontaux (0-3 secondes)
                 const elapsed = Date.now() - animationStartTime;
                 const regroupProgress = Math.min(elapsed / regroupementDuration, 1);
 
@@ -1072,32 +1074,28 @@
 
                 const photonPositionsArray = photonRingGeometry.attributes.position.array;
 
-                // Les 3 anneaux cibles avec inclinaisons dans le plan horizontal
-                const targetTilts = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
-                const alignRotation = 20 * Math.PI / 180; // 20° autour de Z
-                const horizontalRotation = Math.PI / 2; // 90° pour mettre à l'horizontal
+                // Les 3 anneaux cibles horizontaux avec inclinaisons légères
+                const targetTilts = [-Math.PI / 18, 0, Math.PI / 18]; // -10°, 0°, +10°
 
                 for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
                     const baseIndex = ringIdx * particlesPerRing;
                     const targetTilt = targetTilts[ringIdx];
 
-                    // Quaternion actuel (figé)
+                    // Quaternion actuel (figé au début)
                     const currentQuat = frozenRingQuaternions[ringIdx];
 
-                    // Créer le quaternion cible avec rotations combinées
-                    // R = Ry * Rz * Rx (inclinaison, alignement, horizontal)
+                    // Créer le quaternion cible : anneaux horizontaux dans le plan XZ
+                    // Rotation 1: 90° autour de X pour mettre à l'horizontal (plan XY -> XZ)
                     const qX = new THREE.Quaternion();
-                    qX.setFromAxisAngle(new THREE.Vector3(1, 0, 0), horizontalRotation);
+                    qX.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
 
+                    // Rotation 2: légère inclinaison autour de Z pour l'effet 3D
                     const qZ = new THREE.Quaternion();
-                    qZ.setFromAxisAngle(new THREE.Vector3(0, 0, 1), alignRotation);
+                    qZ.setFromAxisAngle(new THREE.Vector3(0, 0, 1), targetTilt);
 
-                    const qY = new THREE.Quaternion();
-                    qY.setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetTilt);
-
+                    // Combiner les rotations : d'abord horizontal, puis inclinaison
                     const targetQuat = new THREE.Quaternion();
-                    targetQuat.multiplyQuaternions(qY, qZ);
-                    targetQuat.multiply(qX);
+                    targetQuat.multiplyQuaternions(qZ, qX);
 
                     // SLERP (interpolation sphérique) entre quaternions
                     const interpQuat = new THREE.Quaternion();
@@ -1107,17 +1105,15 @@
                     const matrix = new THREE.Matrix4();
                     matrix.makeRotationFromQuaternion(interpQuat);
 
-                    // Appliquer la matrice interpolée à chaque particule de l'anneau
+                    // Appliquer la matrice interpolée à chaque particule
                     for (let i = 0; i < particlesPerRing; i++) {
                         const idx = baseIndex + i;
-                        const angle = (i / particlesPerRing) * Math.PI * 2;
-                        const radius = photonRadiusMin + (photonRadiusMax - photonRadiusMin) * 0.5;
 
-                        // Position de base du cercle (plan XY)
+                        // Utiliser les positions de base (cercle plat)
                         const basePos = new THREE.Vector3(
-                            Math.cos(angle) * radius,
-                            Math.sin(angle) * radius,
-                            0
+                            photonBasePositions[idx * 3],
+                            photonBasePositions[idx * 3 + 1],
+                            photonBasePositions[idx * 3 + 2]
                         );
 
                         // Appliquer la transformation interpolée
