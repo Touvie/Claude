@@ -1012,7 +1012,7 @@
 
                 const photonPositionsArray = photonRingGeometry.attributes.position.array;
 
-                // COORDONNÉES CORRIGÉES : Inclinaisons -20°, 0°, +20° autour X + rotation 20° autour Z
+                // TEST DIRECT : Appliquer les coordonnées finales sans SLERP pour déboguer
                 const targetTilts = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
                 const alignRotation = 20 * Math.PI / 180; // 20° autour de Z
 
@@ -1020,39 +1020,32 @@
                     const baseIndex = ringIdx * particlesPerRing;
                     const tiltAngle = targetTilts[ringIdx];
 
-                    // Quaternion actuel (figé)
-                    const currentQuat = frozenRingQuaternions[ringIdx];
+                    // Appliquer DIRECTEMENT les rotations (ignorer SLERP pour tester)
+                    // Rotation 1 : 20° autour de Z
+                    const cZ = Math.cos(alignRotation);
+                    const sZ = Math.sin(alignRotation);
 
-                    // Créer le quaternion cible - jointures horizontales (équateur)
-                    const targetQuat = new THREE.Quaternion();
-                    // Étape 1 : Rotation autour de Z (pour orienter)
-                    const quatAlign = new THREE.Quaternion();
-                    quatAlign.setFromAxisAngle(new THREE.Vector3(0, 0, 1), alignRotation);
-                    // Étape 2 : Inclinaison autour de X (pour écarter les anneaux)
-                    const quatTilt = new THREE.Quaternion();
-                    quatTilt.setFromAxisAngle(new THREE.Vector3(1, 0, 0), tiltAngle);
-                    // Combiner : d'abord align, puis tilt (ordre inversé!)
-                    targetQuat.multiplyQuaternions(quatTilt, quatAlign);
+                    // Rotation 2 : inclinaison autour de X
+                    const cX = Math.cos(tiltAngle);
+                    const sX = Math.sin(tiltAngle);
 
-                    // SLERP (interpolation sphérique) entre quaternions
-                    const interpQuat = new THREE.Quaternion();
-                    interpQuat.slerpQuaternions(currentQuat, targetQuat, t);
+                    // Matrice combinée : d'abord Z, puis X
+                    // R = Rx * Rz
+                    const r00 = cZ;
+                    const r01 = -sZ * cX;
+                    const r02 = -sZ * sX;
+                    const r10 = sZ;
+                    const r11 = cZ * cX;
+                    const r12 = cZ * sX;
+                    const r20 = 0;
+                    const r21 = -sX;
+                    const r22 = cX;
 
-                    // Convertir le quaternion interpolé en matrice
-                    const matrix = new THREE.Matrix4();
-                    matrix.makeRotationFromQuaternion(interpQuat);
-
-                    // Extraire les composants de la matrice
-                    const m = matrix.elements;
-                    const r00 = m[0], r01 = m[4], r02 = m[8];
-                    const r10 = m[1], r11 = m[5], r12 = m[9];
-                    const r20 = m[2], r21 = m[6], r22 = m[10];
-
-                    // Appliquer aux positions DE BASE (cercle plat d'origine)
+                    // Appliquer aux positions DE BASE
                     for (let i = 0; i < particlesPerRing; i++) {
                         const idx = baseIndex + i;
 
-                        // Utiliser les VRAIES positions de base (cercle plat)
+                        // Utiliser les positions de base
                         const px = photonBasePositions[idx * 3];
                         const py = photonBasePositions[idx * 3 + 1];
                         const pz = photonBasePositions[idx * 3 + 2];
