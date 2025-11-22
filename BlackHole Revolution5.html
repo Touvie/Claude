@@ -257,7 +257,7 @@
 </head>
 <body>
     <div id="canvas-container"></div>
-    <div id="version-counter">v1.4 - Local Space Fix</div>
+    <div id="version-counter">v1.5 - Correct Y→X→Z Transform</div>
     <button id="enter-button">⚫ Entrer ⚫</button>
     <button id="tp-button">📷 Vue fixe</button>
     <button id="coords-button">📍 Coordonnées</button>
@@ -1081,28 +1081,40 @@
 
                 const photonPositionsArray = photonRingGeometry.attributes.position.array;
 
-                // Anneaux verticaux avec jonction à Z=0 : rotation 90° autour X + inclinaisons autour Z
-                const targetTilts = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
+                // Séquence de transformations : Rotation Y → Inclinaison X → Alignement Z
+                const targetTiltsX = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
+                const targetAlignZ = Math.PI / 9; // +20° pour tous
 
                 for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
                     const baseIndex = ringIdx * particlesPerRing;
-                    const tiltAngle = targetTilts[ringIdx];
 
-                    // Quaternion actuel (figé)
-                    const currentQuat = frozenRingQuaternions[ringIdx];
+                    // CONTINUER la rotation même pendant le regroupement
+                    ringRotations[ringIdx] += ringRotationSpeeds[ringIdx];
 
-                    // Jonction sur Y local = Z monde (grâce à rotation parent X=90°)
-                    const targetQuat = new THREE.Quaternion();
-                    // Juste des tilts autour de Z pour séparer les anneaux horizontalement
-                    targetQuat.setFromAxisAngle(new THREE.Vector3(0, 0, 1), tiltAngle);
+                    // Interpoler l'axe de rotation vers l'axe Y (vertical)
+                    const currentAxis = ringAxes[ringIdx].clone();
+                    const targetAxis = new THREE.Vector3(0, 1, 0);
+                    const interpAxis = new THREE.Vector3().lerpVectors(currentAxis, targetAxis, t).normalize();
 
-                    // SLERP (interpolation sphérique) entre quaternions
-                    const interpQuat = new THREE.Quaternion();
-                    interpQuat.slerpQuaternions(currentQuat, targetQuat, t);
+                    // 1. Rotation continue autour de l'axe interpolé (converge vers Y)
+                    const rotY = new THREE.Quaternion();
+                    rotY.setFromAxisAngle(interpAxis, ringRotations[ringIdx]);
 
-                    // Convertir le quaternion interpolé en matrice
+                    // 2. Inclinaison autour de l'axe X (appliquée progressivement)
+                    const tiltX = new THREE.Quaternion();
+                    tiltX.setFromAxisAngle(new THREE.Vector3(1, 0, 0), targetTiltsX[ringIdx] * t);
+
+                    // 3. Alignement autour de l'axe Z (appliqué progressivement)
+                    const alignZ = new THREE.Quaternion();
+                    alignZ.setFromAxisAngle(new THREE.Vector3(0, 0, 1), targetAlignZ * t);
+
+                    // Combiner les transformations dans l'ordre : Y → X → Z
+                    const finalQuat = new THREE.Quaternion();
+                    finalQuat.copy(rotY).multiply(tiltX).multiply(alignZ);
+
+                    // Convertir le quaternion en matrice
                     const matrix = new THREE.Matrix4();
-                    matrix.makeRotationFromQuaternion(interpQuat);
+                    matrix.makeRotationFromQuaternion(finalQuat);
 
                     // Extraire les composants de la matrice
                     const m = matrix.elements;
@@ -1110,11 +1122,10 @@
                     const r10 = m[1], r11 = m[5], r12 = m[9];
                     const r20 = m[2], r21 = m[6], r22 = m[10];
 
-                    // Appliquer aux positions DE BASE (cercle plat d'origine)
+                    // Appliquer aux positions de base (cercle plat)
                     for (let i = 0; i < particlesPerRing; i++) {
                         const idx = baseIndex + i;
 
-                        // Utiliser les VRAIES positions de base (cercle plat)
                         const px = photonBasePositions[idx * 3];
                         const py = photonBasePositions[idx * 3 + 1];
                         const pz = photonBasePositions[idx * 3 + 2];
@@ -1138,28 +1149,40 @@
 
                 const photonPositionsArray = photonRingGeometry.attributes.position.array;
 
-                // Anneaux verticaux avec jonction à Z=0 : rotation 90° autour X + inclinaisons autour Z
-                const targetTilts = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
+                // Séquence de transformations : Rotation Y → Inclinaison X → Alignement Z
+                const targetTiltsX = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
+                const targetAlignZ = Math.PI / 9; // +20° pour tous
 
                 for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
                     const baseIndex = ringIdx * particlesPerRing;
-                    const tiltAngle = targetTilts[ringIdx];
 
-                    // Quaternion actuel (figé)
-                    const currentQuat = frozenRingQuaternions[ringIdx];
+                    // CONTINUER la rotation même pendant le regroupement
+                    ringRotations[ringIdx] += ringRotationSpeeds[ringIdx];
 
-                    // Jonction sur Y local = Z monde (grâce à rotation parent X=90°)
-                    const targetQuat = new THREE.Quaternion();
-                    // Juste des tilts autour de Z pour séparer les anneaux horizontalement
-                    targetQuat.setFromAxisAngle(new THREE.Vector3(0, 0, 1), tiltAngle);
+                    // Interpoler l'axe de rotation vers l'axe Y (vertical)
+                    const currentAxis = ringAxes[ringIdx].clone();
+                    const targetAxis = new THREE.Vector3(0, 1, 0);
+                    const interpAxis = new THREE.Vector3().lerpVectors(currentAxis, targetAxis, t).normalize();
 
-                    // SLERP (interpolation sphérique) entre quaternions
-                    const interpQuat = new THREE.Quaternion();
-                    interpQuat.slerpQuaternions(currentQuat, targetQuat, t);
+                    // 1. Rotation continue autour de l'axe interpolé (converge vers Y)
+                    const rotY = new THREE.Quaternion();
+                    rotY.setFromAxisAngle(interpAxis, ringRotations[ringIdx]);
 
-                    // Convertir le quaternion interpolé en matrice
+                    // 2. Inclinaison autour de l'axe X (appliquée progressivement)
+                    const tiltX = new THREE.Quaternion();
+                    tiltX.setFromAxisAngle(new THREE.Vector3(1, 0, 0), targetTiltsX[ringIdx] * t);
+
+                    // 3. Alignement autour de l'axe Z (appliqué progressivement)
+                    const alignZ = new THREE.Quaternion();
+                    alignZ.setFromAxisAngle(new THREE.Vector3(0, 0, 1), targetAlignZ * t);
+
+                    // Combiner les transformations dans l'ordre : Y → X → Z
+                    const finalQuat = new THREE.Quaternion();
+                    finalQuat.copy(rotY).multiply(tiltX).multiply(alignZ);
+
+                    // Convertir le quaternion en matrice
                     const matrix = new THREE.Matrix4();
-                    matrix.makeRotationFromQuaternion(interpQuat);
+                    matrix.makeRotationFromQuaternion(finalQuat);
 
                     // Extraire les composants de la matrice
                     const m = matrix.elements;
@@ -1167,11 +1190,10 @@
                     const r10 = m[1], r11 = m[5], r12 = m[9];
                     const r20 = m[2], r21 = m[6], r22 = m[10];
 
-                    // Appliquer aux positions DE BASE (cercle plat d'origine)
+                    // Appliquer aux positions de base (cercle plat)
                     for (let i = 0; i < particlesPerRing; i++) {
                         const idx = baseIndex + i;
 
-                        // Utiliser les VRAIES positions de base (cercle plat)
                         const px = photonBasePositions[idx * 3];
                         const py = photonBasePositions[idx * 3 + 1];
                         const pz = photonBasePositions[idx * 3 + 2];
