@@ -463,7 +463,7 @@
         ];
         
         const targetTilts = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
-        const alignRotation = 20 * Math.PI / 180;
+        const alignRotation = -17.74 * Math.PI / 180; // Rotation Z pour orienter jonction vers caméra
         
         for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
             const baseIndex = ringIdx * particlesPerRing;
@@ -1012,9 +1012,9 @@
 
                 const photonPositionsArray = photonRingGeometry.attributes.position.array;
 
-                // VOS COORDONNÉES : Inclinaisons -20°, 0°, +20° autour Y + rotation 20° autour Z
+                // VOS COORDONNÉES : Inclinaisons -20°, 0°, +20° autour Y + rotation -17.74° autour Z
                 const targetTilts = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
-                const alignRotation = 20 * Math.PI / 180; // 20° autour de Z
+                const alignRotation = -17.74 * Math.PI / 180; // Rotation Z pour orienter jonction vers caméra
 
                 for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
                     const baseIndex = ringIdx * particlesPerRing;
