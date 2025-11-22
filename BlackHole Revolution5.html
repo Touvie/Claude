@@ -1076,14 +1076,14 @@
 
                     // Créer le quaternion cible pour anneaux verticaux avec jonction à Z=0
                     const targetQuat = new THREE.Quaternion();
-                    // Étape 1 : Rotation de 90° autour X pour placer l'anneau vertical dans plan XZ
-                    const quatX = new THREE.Quaternion();
-                    quatX.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-                    // Étape 2 : Inclinaison autour de Z pour séparer les anneaux (garde jonction sur Z)
+                    // Étape 1 : Rotation de 90° autour Y pour placer la jonction sur Z
+                    const quatY = new THREE.Quaternion();
+                    quatY.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+                    // Étape 2 : Inclinaison autour de X pour séparer les anneaux
                     const quatTilt = new THREE.Quaternion();
-                    quatTilt.setFromAxisAngle(new THREE.Vector3(0, 0, 1), tiltAngle);
-                    // Combiner : X puis tilt autour Z
-                    targetQuat.multiplyQuaternions(quatTilt, quatX);
+                    quatTilt.setFromAxisAngle(new THREE.Vector3(1, 0, 0), tiltAngle);
+                    // Combiner : Y puis tilt autour X
+                    targetQuat.multiplyQuaternions(quatTilt, quatY);
 
                     // SLERP (interpolation sphérique) entre quaternions
                     const interpQuat = new THREE.Quaternion();
@@ -1139,14 +1139,14 @@
 
                     // Créer le quaternion cible pour anneaux verticaux avec jonction à Z=0
                     const targetQuat = new THREE.Quaternion();
-                    // Étape 1 : Rotation de 90° autour X pour placer l'anneau vertical dans plan XZ
-                    const quatX = new THREE.Quaternion();
-                    quatX.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-                    // Étape 2 : Inclinaison autour de Z pour séparer les anneaux (garde jonction sur Z)
+                    // Étape 1 : Rotation de 90° autour Y pour placer la jonction sur Z
+                    const quatY = new THREE.Quaternion();
+                    quatY.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+                    // Étape 2 : Inclinaison autour de X pour séparer les anneaux
                     const quatTilt = new THREE.Quaternion();
-                    quatTilt.setFromAxisAngle(new THREE.Vector3(0, 0, 1), tiltAngle);
-                    // Combiner : X puis tilt autour Z
-                    targetQuat.multiplyQuaternions(quatTilt, quatX);
+                    quatTilt.setFromAxisAngle(new THREE.Vector3(1, 0, 0), tiltAngle);
+                    // Combiner : Y puis tilt autour X
+                    targetQuat.multiplyQuaternions(quatTilt, quatY);
 
                     // SLERP (interpolation sphérique) entre quaternions
                     const interpQuat = new THREE.Quaternion();
