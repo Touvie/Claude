@@ -450,10 +450,10 @@
         ]; // Vitesses très rapides entre 0.030 et 0.040
         
         const ringAxes = [
-            new THREE.Vector3(1, 0, 0), // Axe X pour anneaux verticaux (pôles)
-            new THREE.Vector3(1, 0, 0),
-            new THREE.Vector3(1, 0, 0)
-        ]; // Axes de rotation aux pôles
+            new THREE.Vector3(0, 1, 0), // Axe Y pour anneaux verticaux passant par les pôles
+            new THREE.Vector3(0, 1, 0),
+            new THREE.Vector3(0, 1, 0)
+        ]; // Axes de rotation vertical (Y)
 
         // Axes cibles pour le regroupement (jonction à l'équateur)
         const targetAxes = [
@@ -586,7 +586,7 @@
         });
         
         const photonRing = new THREE.Points(photonRingGeometry, photonRingMaterial);
-        photonRing.rotation.x = Math.PI / 2; // Alignement avec la spirale
+        photonRing.rotation.x = 0; // Anneaux passant par les pôles (verticaux)
         scene.add(photonRing);
         
         const starsCount = 3000;
