@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portail Trou Noir</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: black;
+            overflow-x: hidden;
+        }
+        
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 100;
+            filter: drop-shadow(0 0 25px rgba(255, 150, 50, 0.6)) 
+                    drop-shadow(0 0 50px rgba(255, 120, 0, 0.4));
+        }
+        
+        #enter-button {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 150;
+            padding: 18px 50px;
+            font-size: 1.1rem;
+            background: radial-gradient(circle, rgba(255, 120, 0, 0.15) 0%, rgba(0, 0, 0, 0.3) 100%);
+            border: 2px solid rgba(255, 120, 0, 0.5);
+            color: white;
+            cursor: pointer;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            transition: all 0.4s ease;
+            font-family: Arial, sans-serif;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            box-shadow: 0 0 30px rgba(255, 120, 0, 0.3),
+                        inset 0 0 20px rgba(255, 120, 0, 0.1);
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 30px rgba(255, 120, 0, 0.3),
+                            inset 0 0 20px rgba(255, 120, 0, 0.1);
+                border-color: rgba(255, 120, 0, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 50px rgba(255, 120, 0, 0.6),
+                            inset 0 0 30px rgba(255, 120, 0, 0.2);
+                border-color: rgba(255, 120, 0, 0.8);
+            }
+        }
+        
+        #enter-button:hover {
+            background: radial-gradient(circle, rgba(255, 120, 0, 0.25) 0%, rgba(0, 0, 0, 0.4) 100%);
+            transform: translateX(-50%) scale(1.05);
+            box-shadow: 0 0 60px rgba(255, 120, 0, 0.8),
+                        inset 0 0 30px rgba(255, 120, 0, 0.3);
+        }
+        
+        #enter-button.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-50%) scale(0.8);
+        }
+        
+        #tp-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 150;
+            padding: 12px 24px;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            cursor: pointer;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            font-family: Arial, sans-serif;
+            font-weight: 500;
+        }
+        
+        #tp-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+        
+        #tp-button.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        #coords-button {
+            position: fixed;
+            top: 20px;
+            right: 140px;
+            z-index: 150;
+            padding: 12px 24px;
+            font-size: 0.9rem;
+            background: rgba(0, 200, 255, 0.1);
+            border: 1px solid rgba(0, 200, 255, 0.3);
+            color: white;
+            cursor: pointer;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            font-family: Arial, sans-serif;
+            font-weight: 500;
+        }
+        
+        #coords-button:hover {
+            background: rgba(0, 200, 255, 0.2);
+            border-color: rgba(0, 200, 255, 0.5);
+            transform: scale(1.05);
+        }
+        
+        #coords-button.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        #regroup-button {
+            position: fixed;
+            top: 20px;
+            right: 280px;
+            z-index: 150;
+            padding: 12px 24px;
+            font-size: 0.9rem;
+            background: rgba(255, 100, 255, 0.1);
+            border: 1px solid rgba(255, 100, 255, 0.3);
+            color: white;
+            cursor: pointer;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            font-family: Arial, sans-serif;
+            font-weight: 500;
+        }
+        
+        #regroup-button:hover {
+            background: rgba(255, 100, 255, 0.2);
+            border-color: rgba(255, 100, 255, 0.5);
+            transform: scale(1.05);
+        }
+        
+        #regroup-button.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        #coords-display {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            z-index: 150;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(0, 200, 255, 0.5);
+            color: #00d4ff;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            display: none;
+        }
+        
+        #coords-display.visible {
+            display: block;
+        }
+        
+        .spacer {
+            height: 0;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .content {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            background: black;
+            padding: 100px 50px;
+            color: white;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+        
+        .content.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .content-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .content h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: white;
+        }
+        
+        .content p {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            color: white;
+        }
+        
+        .content-box {
+            background: #1a1a1a;
+            padding: 50px;
+            border-radius: 10px;
+            margin-top: 50px;
+            color: white;
+        }
+        
+        #reveal-circle {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <button id="enter-button">⚫ Entrer ⚫</button>
+    <button id="tp-button">📷 Vue fixe</button>
+    <button id="coords-button">📍 Coordonnées</button>
+    <button id="regroup-button" onclick="window.toggleRegroup()">🔄 Test Regroup</button>
+    <div id="coords-display"></div>
+    <div id="reveal-circle"></div>
+    
+    <div class="spacer"></div>
+    
+    <div class="content">
+        <div class="content-inner">
+            <h1>Bienvenue</h1>
+            <p>Vous avez traversé le trou noir 🌌</p>
+            <div class="content-box">
+                <h2>Contenu du site</h2>
+                <p>Ton contenu commence ici...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const container = document.getElementById('canvas-container');
+        const revealCircle = document.getElementById('reveal-circle');
+        
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x000000);
+        container.appendChild(renderer.domElement);
+        
+        const PHI = (1 + Math.sqrt(5)) / 2;
+        const GOLDEN_ANGLE = Math.PI * 2 / (PHI * PHI);
+        
+        const particleMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0 },
+                opacity: { value: 1.0 }
+            },
+            vertexShader: `
+                uniform float time;
+                attribute float size;
+                attribute vec3 customColor;
+                attribute float luminosity;
+                varying vec3 vColor;
+                varying float vAlpha;
+                varying float vLuminosity;
+                
+                void main() {
+                    vColor = customColor;
+                    vLuminosity = luminosity;
+                    vec3 pos = position;
+                    float dist = length(pos.xy);
+                    float maxDist = 50.0;
+                    vAlpha = 0.7 + 0.3 * (1.0 - dist / maxDist);
+                    
+                    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                    gl_PointSize = size * (300.0 / -mvPosition.z);
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                uniform float opacity;
+                varying vec3 vColor;
+                varying float vAlpha;
+                varying float vLuminosity;
+                
+                void main() {
+                    float dist = length(gl_PointCoord - vec2(0.5));
+                    if (dist > 0.5) discard;
+                    float alpha = (1.0 - smoothstep(0.0, 0.5, dist)) * opacity * vAlpha;
+                    vec3 brightColor = vColor * vLuminosity;
+                    gl_FragColor = vec4(brightColor, alpha);
+                }
+            `,
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+        
+        const count = 200000;
+        const positions = new Float32Array(count * 3);
+        const colors = new Float32Array(count * 3);
+        const sizes = new Float32Array(count);
+        const luminosities = new Float32Array(count);
+        const initialDistances = new Float32Array(count);
+        const initialAngles = new Float32Array(count);
+        const spiralFactors = new Float32Array(count);
+        
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const t = Math.random();
+            
+            let distance;
+            let armOffset = 0;
+            let useArms = false;
+            
+            if (t < 0.75) {
+                const t2 = t / 0.75;
+                distance = 6 + Math.pow(t2, 2.5) * 18; // Commence à 6 au lieu de 2
+            } else {
+                const t2 = (t - 0.75) / 0.25;
+                distance = 24 + t2 * 30; // Ajusté pour compenser
+                
+                const numArms = 3;
+                const armIndex = Math.floor(Math.random() * numArms);
+                const armAngleBase = (armIndex * Math.PI * 2) / numArms;
+                
+                const distanceInArm = (distance - 24) / 30;
+                const armWidth = 1.5 - distanceInArm * 1.2;
+                const armVariation = (Math.random() - 0.5) * armWidth;
+                
+                const armSpiral = -distanceInArm * Math.PI * 0.6;
+                
+                armOffset = -armAngleBase + armSpiral + armVariation;
+                useArms = true;
+            }
+            
+            const spiralFactor = Math.random() * 0.5 + 0.5;
+            
+            initialAngles[i] = angle;
+            initialDistances[i] = distance;
+            spiralFactors[i] = spiralFactor;
+            
+            const spiralAngle = -GOLDEN_ANGLE * Math.log(distance / 6) * spiralFactor; // Ajusté pour distance 6
+            let finalAngle = angle + spiralAngle;
+            
+            if (useArms) {
+                const distanceInArm = (distance - 24) / 30;
+                const armInfluence = Math.pow(distanceInArm, 1.5);
+                finalAngle = finalAngle * (1 - armInfluence) + (armOffset + spiralAngle * 0.3) * armInfluence;
+            }
+            
+            positions[i * 3] = Math.cos(finalAngle) * distance;
+            positions[i * 3 + 1] = Math.sin(finalAngle) * distance;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 0.15;
+            
+            const colorT = (distance - 6) / 48; // Ajusté pour distance 6
+            if (colorT < 0.2) {
+                colors[i * 3] = 1.0;
+                colors[i * 3 + 1] = 0.75;
+                colors[i * 3 + 2] = 0.3;
+            } else if (colorT < 0.5) {
+                const blend = (colorT - 0.2) / 0.3;
+                colors[i * 3] = 1.0;
+                colors[i * 3 + 1] = 0.65 - blend * 0.1;
+                colors[i * 3 + 2] = 0.25 - blend * 0.1;
+            } else {
+                const blend = (colorT - 0.5) / 0.5;
+                colors[i * 3] = 0.9 - blend * 0.1;
+                colors[i * 3 + 1] = 0.55 - blend * 0.15;
+                colors[i * 3 + 2] = 0.15 - blend * 0.05;
+            }
+            
+            const lumT = Math.min((distance - 6) / 28, 1.0); // Ajusté pour distance 6
+            if (distance <= 34) { // Ajusté
+                luminosities[i] = 120.0 - lumT * 50.0;
+            } else {
+                const farT = (distance - 34) / 20;
+                luminosities[i] = 70.0 - farT * 30.0;
+            }
+            
+            const sizeT = Math.min((distance - 6) / 28, 1.0); // Ajusté pour distance 6
+            let sizeMultiplier;
+            if (distance <= 34) { // Ajusté
+                sizeMultiplier = 5.0 - sizeT * 4.0;
+            } else {
+                const farT = (distance - 34) / 20;
+                sizeMultiplier = 1.0 - farT * 0.5;
+            }
+            sizes[i] = (0.03 + Math.random() * 0.04) * sizeMultiplier;
+        }
+        
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('customColor', new THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+        geometry.setAttribute('luminosity', new THREE.BufferAttribute(luminosities, 1));
+        
+        const points = new THREE.Points(geometry, particleMaterial);
+        points.rotation.x = Math.PI / 2;
+        scene.add(points);
+        
+        // === PHOTON RING - Anneaux superposés pour effet 3D ===
+        const numRings = 3;
+        const particlesPerRing = 6000;
+        const photonRingCount = numRings * particlesPerRing;
+        
+        const photonPositions = new Float32Array(photonRingCount * 3);
+        const photonColors = new Float32Array(photonRingCount * 3);
+        const photonSizes = new Float32Array(photonRingCount);
+        const photonLuminosities = new Float32Array(photonRingCount);
+        const photonRingIndices = new Float32Array(photonRingCount); // Quel anneau
+        
+        const photonRadiusMin = 4.3;
+        const photonRadiusMax = 5.2;
+        
+        // Données pour chaque anneau
+        const ringRotations = [0, 0, 0]; // Angles de rotation actuels
+        const ringRotationSpeeds = [
+            0.030 + Math.random() * 0.010,
+            0.030 + Math.random() * 0.010,
+            0.030 + Math.random() * 0.010
+        ]; // Vitesses très rapides entre 0.030 et 0.040
+        
+        const ringAxes = [
+            new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize(),
+            new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize(),
+            new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize()
+        ]; // Axes de rotation aléatoires
+        
+        // Axes cibles pour le regroupement
+        const targetAxes = [
+            new THREE.Vector3(0, 1, 0), // Axe Y pour tous
+            new THREE.Vector3(0, 1, 0),
+            new THREE.Vector3(0, 1, 0)
+        ];
+        
+        const targetTilts = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
+        const alignRotation = 20 * Math.PI / 180;
+        
+        for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
+            const baseIndex = ringIdx * particlesPerRing;
+            const tiltAngle = (ringIdx * Math.PI / 36); // 0°, 5°, 10° (au lieu de 0°, 15°, 30°)
+            
+            for (let i = 0; i < particlesPerRing; i++) {
+                const idx = baseIndex + i;
+                const angle = (i / particlesPerRing) * Math.PI * 2;
+                
+                photonRingIndices[idx] = ringIdx;
+                
+                // Rayon avec distribution gaussienne
+                const t = Math.random();
+                const gaussianT = (t + Math.random() + Math.random()) / 3;
+                const radius = photonRadiusMin + gaussianT * (photonRadiusMax - photonRadiusMin);
+                
+                // Position sur l'anneau horizontal
+                let x = Math.cos(angle) * radius;
+                let y = Math.sin(angle) * radius;
+                let z = (Math.random() - 0.5) * 0.08;
+                
+                // Rotation selon l'inclinaison
+                const yRotated = y * Math.cos(tiltAngle) - z * Math.sin(tiltAngle);
+                const zRotated = y * Math.sin(tiltAngle) + z * Math.cos(tiltAngle);
+                
+                photonPositions[idx * 3] = x;
+                photonPositions[idx * 3 + 1] = yRotated;
+                photonPositions[idx * 3 + 2] = zRotated;
+                
+                // Couleur blanc-orange intense
+                const colorVariation = Math.random() * 0.2;
+                photonColors[idx * 3] = 1.0;
+                photonColors[idx * 3 + 1] = 0.88 + colorVariation * 0.12;
+                photonColors[idx * 3 + 2] = 0.6 + colorVariation * 0.2;
+                
+                // Luminosité
+                const tiltFactor = 1.0 - (ringIdx / numRings) * 0.2;
+                photonLuminosities[idx] = (450.0 + Math.random() * 250.0) * tiltFactor;
+                
+                photonSizes[idx] = 0.16 + Math.random() * 0.08;
+            }
+        }
+        
+        const photonRingGeometry = new THREE.BufferGeometry();
+        photonRingGeometry.setAttribute('position', new THREE.BufferAttribute(photonPositions, 3));
+        photonRingGeometry.setAttribute('customColor', new THREE.BufferAttribute(photonColors, 3));
+        photonRingGeometry.setAttribute('size', new THREE.BufferAttribute(photonSizes, 1));
+        photonRingGeometry.setAttribute('luminosity', new THREE.BufferAttribute(photonLuminosities, 1));
+        
+        // Stocker les positions initiales pour la rotation
+        const photonInitialPositions = new Float32Array(photonRingCount * 3);
+        for (let i = 0; i < photonRingCount * 3; i++) {
+            photonInitialPositions[i] = photonPositions[i];
+        }
+        
+        const photonRingMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                time: { value: 0 },
+                opacity: { value: 1.0 }
+            },
+            vertexShader: `
+                uniform float time;
+                attribute float size;
+                attribute vec3 customColor;
+                attribute float luminosity;
+                varying vec3 vColor;
+                varying float vLuminosity;
+                
+                void main() {
+                    vColor = customColor;
+                    // Pulse de luminosité
+                    vLuminosity = luminosity * (0.85 + 0.15 * sin(time * 2.0));
+                    
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    gl_PointSize = size * (300.0 / -mvPosition.z);
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                uniform float opacity;
+                varying vec3 vColor;
+                varying float vLuminosity;
+                
+                void main() {
+                    float dist = length(gl_PointCoord - vec2(0.5));
+                    if (dist > 0.5) discard;
+                    float alpha = (1.0 - smoothstep(0.0, 0.5, dist)) * opacity;
+                    vec3 brightColor = vColor * vLuminosity;
+                    gl_FragColor = vec4(brightColor, alpha);
+                }
+            `,
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+        
+        const photonRing = new THREE.Points(photonRingGeometry, photonRingMaterial);
+        scene.add(photonRing);
+        
+        const starsCount = 3000;
+        const starsPositions = new Float32Array(starsCount * 3);
+        const starsColors = new Float32Array(starsCount * 3);
+        const starsSizes = new Float32Array(starsCount);
+        
+        for (let i = 0; i < starsCount; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            const radius = 200 + Math.random() * 100;
+            
+            starsPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+            starsPositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+            starsPositions[i * 3 + 2] = radius * Math.cos(phi);
+            
+            const starType = Math.random();
+            if (starType < 0.6) {
+                starsColors[i * 3] = 1.0;
+                starsColors[i * 3 + 1] = 1.0;
+                starsColors[i * 3 + 2] = 1.0;
+            } else if (starType < 0.8) {
+                starsColors[i * 3] = 0.7;
+                starsColors[i * 3 + 1] = 0.8;
+                starsColors[i * 3 + 2] = 1.0;
+            } else if (starType < 0.95) {
+                starsColors[i * 3] = 1.0;
+                starsColors[i * 3 + 1] = 0.9;
+                starsColors[i * 3 + 2] = 0.6;
+            } else {
+                starsColors[i * 3] = 1.0;
+                starsColors[i * 3 + 1] = 0.5;
+                starsColors[i * 3 + 2] = 0.3;
+            }
+            
+            starsSizes[i] = 0.03 + Math.random() * 0.05;
+        }
+        
+        const starsGeometry = new THREE.BufferGeometry();
+        starsGeometry.setAttribute('position', new THREE.BufferAttribute(starsPositions, 3));
+        starsGeometry.setAttribute('customColor', new THREE.BufferAttribute(starsColors, 3));
+        starsGeometry.setAttribute('size', new THREE.BufferAttribute(starsSizes, 1));
+        
+        const starsMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                opacity: { value: 0.6 }
+            },
+            vertexShader: `
+                attribute float size;
+                attribute vec3 customColor;
+                varying vec3 vColor;
+                
+                void main() {
+                    vColor = customColor;
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    gl_PointSize = size * (300.0 / -mvPosition.z);
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                uniform float opacity;
+                varying vec3 vColor;
+                
+                void main() {
+                    float dist = length(gl_PointCoord - vec2(0.5));
+                    if (dist > 0.5) discard;
+                    float alpha = (1.0 - smoothstep(0.3, 0.5, dist)) * opacity;
+                    gl_FragColor = vec4(vColor, alpha);
+                }
+            `,
+            transparent: true,
+            depthWrite: false
+        });
+        
+        const stars = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(stars);
+        
+        const nebulaCount = 1000;
+        const nebulaPositions = new Float32Array(nebulaCount * 3);
+        const nebulaColors = new Float32Array(nebulaCount * 3);
+        const nebulaSizes = new Float32Array(nebulaCount);
+        
+        for (let i = 0; i < nebulaCount; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            const radius = 200 + Math.random() * 100;
+            
+            nebulaPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+            nebulaPositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+            nebulaPositions[i * 3 + 2] = radius * Math.cos(phi);
+            
+            const nebulaType = Math.random();
+            if (nebulaType < 0.4) {
+                nebulaColors[i * 3] = 0.5 + Math.random() * 0.3;
+                nebulaColors[i * 3 + 1] = 0.2;
+                nebulaColors[i * 3 + 2] = 0.8;
+            } else if (nebulaType < 0.7) {
+                nebulaColors[i * 3] = 0.2;
+                nebulaColors[i * 3 + 1] = 0.5 + Math.random() * 0.3;
+                nebulaColors[i * 3 + 2] = 0.9;
+            } else {
+                nebulaColors[i * 3] = 0.9;
+                nebulaColors[i * 3 + 1] = 0.3;
+                nebulaColors[i * 3 + 2] = 0.5 + Math.random() * 0.3;
+            }
+            
+            nebulaSizes[i] = 0.5 + Math.random() * 1.5;
+        }
+        
+        const nebulaGeometry = new THREE.BufferGeometry();
+        nebulaGeometry.setAttribute('position', new THREE.BufferAttribute(nebulaPositions, 3));
+        nebulaGeometry.setAttribute('customColor', new THREE.BufferAttribute(nebulaColors, 3));
+        nebulaGeometry.setAttribute('size', new THREE.BufferAttribute(nebulaSizes, 1));
+        
+        const nebulaMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                opacity: { value: 0.15 }
+            },
+            vertexShader: `
+                attribute float size;
+                attribute vec3 customColor;
+                varying vec3 vColor;
+                
+                void main() {
+                    vColor = customColor;
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    gl_PointSize = size * (300.0 / -mvPosition.z);
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                uniform float opacity;
+                varying vec3 vColor;
+                
+                void main() {
+                    float dist = length(gl_PointCoord - vec2(0.5));
+                    if (dist > 0.5) discard;
+                    float alpha = (1.0 - smoothstep(0.0, 0.5, dist)) * opacity;
+                    gl_FragColor = vec4(vColor, alpha);
+                }
+            `,
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+        
+        const nebula = new THREE.Points(nebulaGeometry, nebulaMaterial);
+        scene.add(nebula);
+        
+        const galaxyCount = 15000;
+        const galaxyPositions = new Float32Array(galaxyCount * 3);
+        const galaxyColors = new Float32Array(galaxyCount * 3);
+        const galaxySizes = new Float32Array(galaxyCount);
+        
+        for (let i = 0; i < galaxyCount; i++) {
+            const clusterAngle = Math.random() * Math.PI * 2;
+            const clusterDist = 200 + Math.random() * 80;
+            
+            const centerX = Math.cos(clusterAngle) * clusterDist;
+            const centerY = 50 + (Math.random() - 0.5) * 100;
+            const centerZ = 50 + Math.sin(clusterAngle) * clusterDist;
+            
+            const spreadX = (Math.random() - 0.5) * 80;
+            const spreadY = (Math.random() - 0.5) * 60;
+            const spreadZ = (Math.random() - 0.5) * 40;
+            
+            galaxyPositions[i * 3] = centerX + spreadX;
+            galaxyPositions[i * 3 + 1] = centerY + spreadY;
+            galaxyPositions[i * 3 + 2] = centerZ + spreadZ;
+            
+            const nebulaType = Math.random();
+            const intensity = 0.8 + Math.random() * 0.2;
+            
+            if (nebulaType < 0.3) {
+                galaxyColors[i * 3] = 1.0 * intensity;
+                galaxyColors[i * 3 + 1] = 0.2 * intensity;
+                galaxyColors[i * 3 + 2] = 0.9 * intensity;
+            } else if (nebulaType < 0.5) {
+                galaxyColors[i * 3] = 0.1 * intensity;
+                galaxyColors[i * 3 + 1] = 0.9 * intensity;
+                galaxyColors[i * 3 + 2] = 1.0 * intensity;
+            } else if (nebulaType < 0.7) {
+                galaxyColors[i * 3] = 0.6 * intensity;
+                galaxyColors[i * 3 + 1] = 0.2 * intensity;
+                galaxyColors[i * 3 + 2] = 1.0 * intensity;
+            } else if (nebulaType < 0.85) {
+                galaxyColors[i * 3] = 1.0 * intensity;
+                galaxyColors[i * 3 + 1] = 0.4 * intensity;
+                galaxyColors[i * 3 + 2] = 0.1 * intensity;
+            } else {
+                galaxyColors[i * 3] = 0.3 * intensity;
+                galaxyColors[i * 3 + 1] = 1.0 * intensity;
+                galaxyColors[i * 3 + 2] = 0.4 * intensity;
+            }
+            
+            galaxySizes[i] = 0.5 + Math.random() * 1.5;
+        }
+        
+        const galaxyGeometry = new THREE.BufferGeometry();
+        galaxyGeometry.setAttribute('position', new THREE.BufferAttribute(galaxyPositions, 3));
+        galaxyGeometry.setAttribute('customColor', new THREE.BufferAttribute(galaxyColors, 3));
+        galaxyGeometry.setAttribute('size', new THREE.BufferAttribute(galaxySizes, 1));
+        
+        const galaxyMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                opacity: { value: 0.8 }
+            },
+            vertexShader: `
+                attribute float size;
+                attribute vec3 customColor;
+                varying vec3 vColor;
+                
+                void main() {
+                    vColor = customColor;
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    gl_PointSize = size * (300.0 / -mvPosition.z);
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                uniform float opacity;
+                varying vec3 vColor;
+                
+                void main() {
+                    float dist = length(gl_PointCoord - vec2(0.5));
+                    if (dist > 0.5) discard;
+                    float alpha = (1.0 - smoothstep(0.2, 0.5, dist)) * opacity;
+                    gl_FragColor = vec4(vColor, alpha);
+                }
+            `,
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+        
+        const galaxy = new THREE.Points(galaxyGeometry, galaxyMaterial);
+        scene.add(galaxy);
+        
+        const eventHorizonGeometry = new THREE.SphereGeometry(4.0, 64, 64);
+        const eventHorizonMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x000000
+        });
+        const eventHorizon = new THREE.Mesh(eventHorizonGeometry, eventHorizonMaterial);
+        scene.add(eventHorizon);
+        
+        const fixedCameraPosition = {
+            x: -8,
+            y: 6,
+            z: 25,
+            radius: 27,
+            theta: 1.891,
+            phi: 1.325
+        };
+        
+        let cameraDistance = fixedCameraPosition.radius;
+        
+        const controls = { 
+            rotateSpeed: 1.0, 
+            zoomSpeed: 1.2, 
+            minDistance: 1, 
+            maxDistance: 300, 
+            target: new THREE.Vector3(0, 0, 0), 
+            spherical: { 
+                radius: 80, 
+                theta: 0, 
+                phi: Math.PI / 4
+            }, 
+            isDragging: false, 
+            lastX: 0, 
+            lastY: 0,
+            enabled: true
+        };
+
+        const onMouseDown = (e) => { 
+            if (!controls.enabled) return;
+            controls.isDragging = true; 
+            controls.lastX = e.clientX; 
+            controls.lastY = e.clientY; 
+        };
+        
+        const onMouseMove = (e) => { 
+            if (!controls.isDragging || !controls.enabled) return; 
+            const deltaX = e.clientX - controls.lastX; 
+            const deltaY = e.clientY - controls.lastY; 
+            controls.spherical.theta -= deltaX * 0.01; 
+            controls.spherical.phi -= deltaY * 0.01; 
+            controls.spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, controls.spherical.phi)); 
+            controls.lastX = e.clientX; 
+            controls.lastY = e.clientY; 
+        };
+        
+        const onMouseUp = () => { 
+            controls.isDragging = false; 
+        };
+        
+        const onWheel = (e) => { 
+            if (!controls.enabled) return;
+            e.preventDefault(); 
+            controls.spherical.radius += e.deltaY * 0.05; 
+            controls.spherical.radius = Math.max(1, Math.min(300, controls.spherical.radius)); 
+        };
+
+        renderer.domElement.addEventListener('mousedown', onMouseDown);
+        renderer.domElement.addEventListener('mousemove', onMouseMove);
+        renderer.domElement.addEventListener('mouseup', onMouseUp);
+        renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
+        
+        let isAnimating = false;
+        let animationProgress = 0;
+        const animationDuration = 5000;
+        const blackScreenDuration = 100;
+        let animationStartTime = 0;
+        let showContent = false;
+        
+        const enterButton = document.getElementById('enter-button');
+        const tpButton = document.getElementById('tp-button');
+        const coordsButton = document.getElementById('coords-button');
+        const coordsDisplay = document.getElementById('coords-display');
+        const regroupButton = document.getElementById('regroup-button');
+        
+        let isRegrouping = false; // État du regroupement pour le test
+        let regroupTestStartTime = 0;
+        
+        // Fonction globale pour le bouton
+        window.toggleRegroup = function() {
+            isRegrouping = !isRegrouping;
+            const btn = document.getElementById('regroup-button');
+            
+            if (isRegrouping) {
+                regroupTestStartTime = Date.now();
+                btn.textContent = '❌ Stop';
+                btn.style.background = 'rgba(255, 0, 0, 0.5)';
+            } else {
+                btn.textContent = '🔄 Test Regroup';
+                btn.style.background = 'rgba(255, 100, 255, 0.1)';
+            }
+        };
+        
+        coordsButton.addEventListener('click', () => {
+            if (controls.enabled) {
+                const x = controls.spherical.radius * Math.sin(controls.spherical.phi) * Math.cos(controls.spherical.theta);
+                const y = controls.spherical.radius * Math.cos(controls.spherical.phi);
+                const z = controls.spherical.radius * Math.sin(controls.spherical.phi) * Math.sin(controls.spherical.theta);
+                
+                coordsDisplay.innerHTML = `
+                    <strong>Position caméra :</strong><br>
+                    x: ${x.toFixed(2)}<br>
+                    y: ${y.toFixed(2)}<br>
+                    z: ${z.toFixed(2)}<br>
+                    <br>
+                    <strong>Sphérique :</strong><br>
+                    radius: ${controls.spherical.radius.toFixed(2)}<br>
+                    theta: ${controls.spherical.theta.toFixed(3)}<br>
+                    phi: ${controls.spherical.phi.toFixed(3)}
+                `;
+                coordsDisplay.classList.add('visible');
+                
+                setTimeout(() => {
+                    coordsDisplay.classList.remove('visible');
+                }, 5000);
+            }
+        });
+        
+        tpButton.addEventListener('click', () => {
+            if (controls.enabled) {
+                controls.spherical.radius = fixedCameraPosition.radius;
+                controls.spherical.theta = fixedCameraPosition.theta;
+                controls.spherical.phi = fixedCameraPosition.phi;
+            }
+        });
+        
+        enterButton.addEventListener('click', () => {
+            if (!isAnimating) {
+                isAnimating = true;
+                animationStartTime = Date.now();
+                enterButton.classList.add('hidden');
+                tpButton.classList.add('hidden');
+                coordsButton.classList.add('hidden');
+                coordsDisplay.classList.remove('visible');
+                controls.enabled = false;
+            }
+        });
+        
+        let pulseTime = 0;
+        let globalTime = 0;
+        let regroupementComplete = false;
+        const regroupementDuration = 3000; // 3 secondes
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            globalTime += 0.016;
+            pulseTime += 0.002;
+            const pulse = Math.sin(pulseTime) * 0.02 + 1;
+            
+            // Update photon ring pulse
+            photonRingMaterial.uniforms.time.value = globalTime;
+            
+            // Animation des anneaux
+            if (isRegrouping) {
+                // Mode test : regroupement continu
+                const elapsed = Date.now() - regroupTestStartTime;
+                const regroupProgress = Math.min(elapsed / regroupementDuration, 1);
+                
+                // Courbe ease-in-out pour plus de fluidité
+                const t = regroupProgress < 0.5 
+                    ? 2 * regroupProgress * regroupProgress 
+                    : 1 - Math.pow(-2 * regroupProgress + 2, 2) / 2;
+                
+                const photonPositionsArray = photonRingGeometry.attributes.position.array;
+                
+                // Inclinaisons SIMPLES : -20°, 0°, +20° autour de l'axe Z
+                const targetTilts = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
+                const alignRotation = 20 * Math.PI / 180;
+                
+                for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
+                    const baseIndex = ringIdx * particlesPerRing;
+                    const tiltAngle = targetTilts[ringIdx];
+                    
+                    for (let i = 0; i < particlesPerRing; i++) {
+                        const idx = baseIndex + i;
+                        const angle = (i / particlesPerRing) * Math.PI * 2;
+                        
+                        const px = photonInitialPositions[idx * 3];
+                        const py = photonInitialPositions[idx * 3 + 1];
+                        const pz = photonInitialPositions[idx * 3 + 2];
+                        
+                        const radius = photonRadiusMin + (photonRadiusMax - photonRadiusMin) * 0.5;
+                        
+                        // Position cible
+                        let x = Math.cos(angle) * radius;
+                        let y = 0;
+                        let z = Math.sin(angle) * radius;
+                        
+                        const xRot = x * Math.cos(tiltAngle) - y * Math.sin(tiltAngle);
+                        const yRot = x * Math.sin(tiltAngle) + y * Math.cos(tiltAngle);
+                        const zRot = z;
+                        
+                        const xFinal = xRot * Math.cos(alignRotation) - zRot * Math.sin(alignRotation);
+                        const yFinal = yRot;
+                        const zFinal = xRot * Math.sin(alignRotation) + zRot * Math.cos(alignRotation);
+                        
+                        // Interpolation AVEC détour pour éviter le centre
+                        // On passe par un point intermédiaire plus éloigné
+                        const midX = (px + xFinal) * 0.5;
+                        const midY = (py + yFinal) * 0.5;
+                        const midZ = (pz + zFinal) * 0.5;
+                        
+                        // Pousser le point milieu vers l'extérieur
+                        const midRadius = Math.sqrt(midX * midX + midY * midY + midZ * midZ);
+                        const pushFactor = Math.max(8, midRadius * 1.3); // Au moins rayon 8 pour éviter la sphère
+                        const midXPushed = (midX / midRadius) * pushFactor;
+                        const midYPushed = (midY / midRadius) * pushFactor;
+                        const midZPushed = (midZ / midRadius) * pushFactor;
+                        
+                        // Interpolation quadratique (courbe qui passe par le point poussé)
+                        let currentX, currentY, currentZ;
+                        if (t < 0.5) {
+                            // Première moitié : de initial vers mid
+                            const t1 = t * 2;
+                            currentX = px + (midXPushed - px) * t1;
+                            currentY = py + (midYPushed - py) * t1;
+                            currentZ = pz + (midZPushed - pz) * t1;
+                        } else {
+                            // Deuxième moitié : de mid vers final
+                            const t2 = (t - 0.5) * 2;
+                            currentX = midXPushed + (xFinal - midXPushed) * t2;
+                            currentY = midYPushed + (yFinal - midYPushed) * t2;
+                            currentZ = midZPushed + (zFinal - midZPushed) * t2;
+                        }
+                        
+                        photonPositionsArray[idx * 3]     = currentX;
+                        photonPositionsArray[idx * 3 + 1] = currentY;
+                        photonPositionsArray[idx * 3 + 2] = currentZ;
+                    }
+                }
+                
+                photonRingGeometry.attributes.position.needsUpdate = true;
+            } else if (isAnimating && !regroupementComplete) {
+                // Phase 1: Regroupement avec jonction face caméra (0-3 secondes)
+                const elapsed = Date.now() - animationStartTime;
+                const regroupProgress = Math.min(elapsed / regroupementDuration, 1);
+                
+                // Interpolation douce (ease-out)
+                const t = 1 - Math.pow(1 - regroupProgress, 3);
+                
+                const photonPositionsArray = photonRingGeometry.attributes.position.array;
+                
+                // Les 3 anneaux cibles avec inclinaisons 0°, 15°, 30°
+                const targetTilts = [0, Math.PI / 12, Math.PI / 6]; // 0°, 15°, 30°
+                
+                for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
+                    const baseIndex = ringIdx * particlesPerRing;
+                    const targetTilt = targetTilts[ringIdx];
+                    
+                    for (let i = 0; i < particlesPerRing; i++) {
+                        const idx = baseIndex + i;
+                        const angle = (i / particlesPerRing) * Math.PI * 2;
+                        
+                        // Position initiale (chaotique)
+                        const px = photonInitialPositions[idx * 3];
+                        const py = photonInitialPositions[idx * 3 + 1];
+                        const pz = photonInitialPositions[idx * 3 + 2];
+                        
+                        // Position cible : anneau incliné, centré sur (0,0,0)
+                        const radius = photonRadiusMin + (photonRadiusMax - photonRadiusMin) * 0.5;
+                        
+                        // Anneau horizontal de base
+                        let targetX = Math.cos(angle) * radius;
+                        let targetY = Math.sin(angle) * radius;
+                        let targetZ = 0;
+                        
+                        // Appliquer l'inclinaison autour de l'axe X (pour créer les anneaux inclinés)
+                        const yRotated = targetY * Math.cos(targetTilt) - targetZ * Math.sin(targetTilt);
+                        const zRotated = targetY * Math.sin(targetTilt) + targetZ * Math.cos(targetTilt);
+                        
+                        targetY = yRotated;
+                        targetZ = zRotated;
+                        
+                        // Interpolation vers la position cible
+                        photonPositionsArray[idx * 3]     = px + (targetX - px) * t;
+                        photonPositionsArray[idx * 3 + 1] = py + (targetY - py) * t;
+                        photonPositionsArray[idx * 3 + 2] = pz + (targetZ - pz) * t;
+                    }
+                }
+                
+                photonRingGeometry.attributes.position.needsUpdate = true;
+                
+                // Quand le regroupement est terminé
+                if (regroupProgress >= 1) {
+                    regroupementComplete = true;
+                    animationStartTime = Date.now(); // Reset pour la phase 2
+                }
+            } else if (!isAnimating) {
+                // Rotation normale indépendante de chaque anneau
+                const photonPositionsArray = photonRingGeometry.attributes.position.array;
+                
+                for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
+                    ringRotations[ringIdx] += ringRotationSpeeds[ringIdx];
+                    
+                    const baseIndex = ringIdx * particlesPerRing;
+                    const axis = ringAxes[ringIdx];
+                    const angle = ringRotations[ringIdx];
+                    
+                    const c = Math.cos(angle);
+                    const s = Math.sin(angle);
+                    const t = 1 - c;
+                    const x = axis.x, y = axis.y, z = axis.z;
+                    
+                    const r00 = t*x*x + c,    r01 = t*x*y - s*z, r02 = t*x*z + s*y;
+                    const r10 = t*x*y + s*z,  r11 = t*y*y + c,   r12 = t*y*z - s*x;
+                    const r20 = t*x*z - s*y,  r21 = t*y*z + s*x, r22 = t*z*z + c;
+                    
+                    for (let i = 0; i < particlesPerRing; i++) {
+                        const idx = baseIndex + i;
+                        
+                        const px = photonInitialPositions[idx * 3];
+                        const py = photonInitialPositions[idx * 3 + 1];
+                        const pz = photonInitialPositions[idx * 3 + 2];
+                        
+                        photonPositionsArray[idx * 3]     = r00*px + r01*py + r02*pz;
+                        photonPositionsArray[idx * 3 + 1] = r10*px + r11*py + r12*pz;
+                        photonPositionsArray[idx * 3 + 2] = r20*px + r21*py + r22*pz;
+                    }
+                }
+                
+                photonRingGeometry.attributes.position.needsUpdate = true;
+            }
+            
+            if (isAnimating) {
+                const elapsed = Date.now() - animationStartTime;
+                animationProgress = Math.min(elapsed / animationDuration, 1);
+                
+                if (animationProgress < 0.9) {
+                    const phase1Progress = animationProgress / 0.9;
+                    
+                    const gravityCurve = Math.pow(phase1Progress, 2.5);
+                    
+                    const currentRadius = fixedCameraPosition.radius * (1 - gravityCurve);
+                    
+                    const dirX = fixedCameraPosition.x / fixedCameraPosition.radius;
+                    const dirY = fixedCameraPosition.y / fixedCameraPosition.radius;
+                    const dirZ = fixedCameraPosition.z / fixedCameraPosition.radius;
+                    
+                    camera.position.x = dirX * currentRadius;
+                    camera.position.y = dirY * currentRadius;
+                    camera.position.z = dirZ * currentRadius;
+                    
+                    cameraDistance = currentRadius;
+                    
+                    const baseFOV = 75;
+                    const maxFOV = 175;
+                    camera.fov = baseFOV + (gravityCurve * (maxFOV - baseFOV));
+                    camera.updateProjectionMatrix();
+                    
+                    if (animationProgress < 0.8) {
+                        renderer.domElement.style.opacity = '1';
+                    } else {
+                        const fadeStart = (animationProgress - 0.8) / 0.1;
+                        renderer.domElement.style.opacity = String(1 - fadeStart);
+                    }
+                    
+                    if (cameraDistance < 8) {
+                        const fadeParticles = Math.pow(cameraDistance / 8, 2);
+                        particleMaterial.uniforms.opacity.value = 1.0 * fadeParticles;
+                    } else {
+                        particleMaterial.uniforms.opacity.value = 1.0;
+                    }
+                }
+                else {
+                    const phase2Progress = (animationProgress - 0.9) / 0.1;
+                    
+                    const currentRadius = -5 * phase2Progress;
+                    
+                    const dirX = fixedCameraPosition.x / fixedCameraPosition.radius;
+                    const dirY = fixedCameraPosition.y / fixedCameraPosition.radius;
+                    const dirZ = fixedCameraPosition.z / fixedCameraPosition.radius;
+                    
+                    camera.position.x = dirX * currentRadius;
+                    camera.position.y = dirY * currentRadius;
+                    camera.position.z = dirZ * currentRadius;
+                    
+                    cameraDistance = Math.abs(currentRadius);
+                    
+                    camera.fov = 175;
+                    camera.updateProjectionMatrix();
+                    
+                    renderer.domElement.style.opacity = '0';
+                    particleMaterial.uniforms.opacity.value = 0;
+                }
+                
+                if (animationProgress >= 1) {
+                    isAnimating = false;
+                    setTimeout(() => {
+                        showContent = true;
+                        const content = document.querySelector('.content');
+                        content.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        content.style.opacity = '0';
+                        content.style.transform = 'scale(0.8)';
+                        setTimeout(() => {
+                            content.style.opacity = '1';
+                            content.style.transform = 'scale(1)';
+                        }, 50);
+                        
+                        container.style.transition = 'opacity 0.3s ease';
+                        container.style.opacity = '0';
+                        setTimeout(() => {
+                            renderer.setAnimationLoop(null);
+                            renderer.dispose();
+                            container.style.display = 'none';
+                        }, 300);
+                    }, blackScreenDuration);
+                }
+            }
+            
+            const positionsArray = geometry.attributes.position.array;
+            
+            for (let i = 0; i < count; i++) {
+                let distance = initialDistances[i];
+                distance -= 0.010;
+                
+                if (distance < 6) {
+                    const t = Math.random();
+                    
+                    if (t < 0.75) {
+                        const t2 = t / 0.75;
+                        distance = 6 + Math.pow(t2, 2.5) * 18;
+                    } else {
+                        const t2 = (t - 0.75) / 0.25;
+                        distance = 24 + t2 * 30;
+                    }
+                    
+                    initialDistances[i] = distance;
+                    initialAngles[i] = Math.random() * Math.PI * 2;
+                } else {
+                    initialDistances[i] = distance;
+                }
+                
+                const angle = initialAngles[i];
+                const spiralFactor = spiralFactors[i];
+                const spiralAngle = -GOLDEN_ANGLE * Math.log(distance / 6) * spiralFactor;
+                let finalAngle = angle + spiralAngle;
+                
+                if (distance > 24) {
+                    const numArms = 3;
+                    const armIndex = Math.floor((angle / (Math.PI * 2)) * numArms);
+                    const armAngleBase = (armIndex * Math.PI * 2) / numArms;
+                    
+                    const distanceInArm = (distance - 24) / 30;
+                    const armWidth = 1.5 - distanceInArm * 1.2;
+                    const armVariation = ((angle % (Math.PI * 2 / numArms)) - Math.PI / numArms) / (Math.PI / numArms) * armWidth * 0.5;
+                    const armSpiral = distanceInArm * Math.PI * 0.6;
+                    const armAngle = armAngleBase + armSpiral + armVariation;
+                    
+                    const armInfluence = Math.pow(distanceInArm, 1.5);
+                    finalAngle = finalAngle * (1 - armInfluence) + armAngle * armInfluence;
+                }
+                
+                positionsArray[i * 3] = Math.cos(finalAngle) * distance;
+                positionsArray[i * 3 + 1] = Math.sin(finalAngle) * distance;
+                
+                const lumT = Math.min((distance - 6) / 28, 1.0);
+                if (distance <= 34) {
+                    luminosities[i] = 120.0 - lumT * 50.0;
+                } else {
+                    const farT = (distance - 34) / 20;
+                    luminosities[i] = 70.0 - farT * 30.0;
+                }
+            }
+            
+            geometry.attributes.position.needsUpdate = true;
+            geometry.attributes.luminosity.needsUpdate = true;
+            
+            if (controls.enabled) {
+                camera.position.x = controls.spherical.radius * Math.sin(controls.spherical.phi) * Math.cos(controls.spherical.theta);
+                camera.position.y = controls.spherical.radius * Math.cos(controls.spherical.phi);
+                camera.position.z = controls.spherical.radius * Math.sin(controls.spherical.phi) * Math.sin(controls.spherical.theta);
+                camera.lookAt(controls.target);
+            } else if (!isAnimating) {
+                camera.position.x = fixedCameraPosition.x;
+                camera.position.y = fixedCameraPosition.y;
+                camera.position.z = fixedCameraPosition.z;
+                camera.lookAt(0, 0, 0);
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        animate();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
