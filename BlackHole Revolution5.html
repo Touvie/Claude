@@ -1059,9 +1059,8 @@
 
                 const photonPositionsArray = photonRingGeometry.attributes.position.array;
 
-                // Jonction aux pôles : rotation de 90° autour Y + inclinaisons -20°, 0°, +20° autour X
+                // Anneaux verticaux avec jonction à X=0 : rotation 90° autour Y + inclinaisons autour Z
                 const targetTilts = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
-                const alignRotation = 0; // Rotation Z pour alignement
 
                 for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
                     const baseIndex = ringIdx * particlesPerRing;
@@ -1070,20 +1069,16 @@
                     // Quaternion actuel (figé)
                     const currentQuat = frozenRingQuaternions[ringIdx];
 
-                    // Créer le quaternion cible pour jonction aux pôles (axe X)
+                    // Créer le quaternion cible pour anneaux verticaux avec jonction à X=0
                     const targetQuat = new THREE.Quaternion();
-                    // Étape 1 : Rotation de 90° autour de Y pour orienter vers X=0
+                    // Étape 1 : Rotation de 90° autour Y pour placer l'anneau vertical dans plan YZ
                     const quatY = new THREE.Quaternion();
-                    quatY.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
-                    // Étape 2 : Inclinaison autour de X
+                    quatY.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+                    // Étape 2 : Inclinaison autour de Z pour séparer les anneaux
                     const quatTilt = new THREE.Quaternion();
-                    quatTilt.setFromAxisAngle(new THREE.Vector3(1, 0, 0), tiltAngle);
-                    // Étape 3 : Rotation autour de Z pour alignement
-                    const quatAlign = new THREE.Quaternion();
-                    quatAlign.setFromAxisAngle(new THREE.Vector3(0, 0, 1), alignRotation);
-                    // Combiner : Y → tilt → align
+                    quatTilt.setFromAxisAngle(new THREE.Vector3(0, 0, 1), tiltAngle);
+                    // Combiner : Y puis tilt autour Z
                     targetQuat.multiplyQuaternions(quatTilt, quatY);
-                    targetQuat.multiplyQuaternions(quatAlign, targetQuat);
 
                     // SLERP (interpolation sphérique) entre quaternions
                     const interpQuat = new THREE.Quaternion();
@@ -1127,9 +1122,8 @@
 
                 const photonPositionsArray = photonRingGeometry.attributes.position.array;
 
-                // Jonction aux pôles : rotation -90° autour Y + inclinaisons -20°, 0°, +20° autour Z
+                // Anneaux verticaux avec jonction à X=0 : rotation 90° autour Y + inclinaisons autour Z
                 const targetTilts = [-Math.PI / 9, 0, Math.PI / 9]; // -20°, 0°, +20°
-                const alignRotation = 0; // Rotation Z pour orienter jonction vers caméra
 
                 for (let ringIdx = 0; ringIdx < numRings; ringIdx++) {
                     const baseIndex = ringIdx * particlesPerRing;
@@ -1138,20 +1132,16 @@
                     // Quaternion actuel (figé)
                     const currentQuat = frozenRingQuaternions[ringIdx];
 
-                    // Créer le quaternion cible pour jonction aux pôles (axe X)
+                    // Créer le quaternion cible pour anneaux verticaux avec jonction à X=0
                     const targetQuat = new THREE.Quaternion();
-                    // Étape 1 : Rotation de 90° autour de Y pour orienter vers X=0
+                    // Étape 1 : Rotation de 90° autour Y pour placer l'anneau vertical dans plan YZ
                     const quatY = new THREE.Quaternion();
-                    quatY.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
-                    // Étape 2 : Inclinaison autour de X
+                    quatY.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+                    // Étape 2 : Inclinaison autour de Z pour séparer les anneaux
                     const quatTilt = new THREE.Quaternion();
-                    quatTilt.setFromAxisAngle(new THREE.Vector3(1, 0, 0), tiltAngle);
-                    // Étape 3 : Rotation autour de Z pour alignement
-                    const quatAlign = new THREE.Quaternion();
-                    quatAlign.setFromAxisAngle(new THREE.Vector3(0, 0, 1), alignRotation);
-                    // Combiner : Y → tilt → align
+                    quatTilt.setFromAxisAngle(new THREE.Vector3(0, 0, 1), tiltAngle);
+                    // Combiner : Y puis tilt autour Z
                     targetQuat.multiplyQuaternions(quatTilt, quatY);
-                    targetQuat.multiplyQuaternions(quatAlign, targetQuat);
 
                     // SLERP (interpolation sphérique) entre quaternions
                     const interpQuat = new THREE.Quaternion();
