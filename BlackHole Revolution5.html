@@ -830,7 +830,11 @@
         });
         const eventHorizon = new THREE.Mesh(eventHorizonGeometry, eventHorizonMaterial);
         scene.add(eventHorizon);
-        
+
+        // Helper pour visualiser les axes : Rouge=X, Vert=Y, Bleu=Z
+        const axesHelper = new THREE.AxesHelper(15);
+        scene.add(axesHelper);
+
         const fixedCameraPosition = {
             x: -8,
             y: 6,
