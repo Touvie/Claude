@@ -163,6 +163,22 @@
             opacity: 0;
             pointer-events: none;
         }
+
+        #version-counter {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 150;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #00ff00;
+            border-radius: 6px;
+            backdrop-filter: blur(10px);
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
         
         #coords-display {
             position: fixed;
@@ -241,6 +257,7 @@
 </head>
 <body>
     <div id="canvas-container"></div>
+    <div id="version-counter">v1.0 - Rotation Y</div>
     <button id="enter-button">⚫ Entrer ⚫</button>
     <button id="tp-button">📷 Vue fixe</button>
     <button id="coords-button">📍 Coordonnées</button>
