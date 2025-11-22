@@ -832,8 +832,28 @@
         scene.add(eventHorizon);
 
         // Helper pour visualiser les axes : Rouge=X, Vert=Y, Bleu=Z
-        const axesHelper = new THREE.AxesHelper(15);
-        scene.add(axesHelper);
+        const createAxis = (color, direction) => {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array([
+                0, 0, 0,
+                direction.x * 30, direction.y * 30, direction.z * 30
+            ]);
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const material = new THREE.LineBasicMaterial({
+                color: color,
+                linewidth: 3,
+                depthTest: false,
+                depthWrite: false
+            });
+            return new THREE.Line(geometry, material);
+        };
+
+        const axisX = createAxis(0xff0000, new THREE.Vector3(1, 0, 0)); // Rouge X
+        const axisY = createAxis(0x00ff00, new THREE.Vector3(0, 1, 0)); // Vert Y
+        const axisZ = createAxis(0x0000ff, new THREE.Vector3(0, 0, 1)); // Bleu Z
+        scene.add(axisX);
+        scene.add(axisY);
+        scene.add(axisZ);
 
         const fixedCameraPosition = {
             x: -8,
