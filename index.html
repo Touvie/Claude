@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude - Démos WebGL</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+        h1 {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+        .demos {
+            display: grid;
+            gap: 2rem;
+        }
+        .demo-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .demo-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(102, 126, 234, 0.5);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        .demo-card h2 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            color: #667eea;
+        }
+        .demo-card p {
+            color: #bbb;
+            line-height: 1.6;
+        }
+        .tag {
+            display: inline-block;
+            background: rgba(102, 126, 234, 0.2);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌌 Démos WebGL</h1>
+        <p class="subtitle">Expériences visuelles interactives</p>
+
+        <div class="demos">
+            <a href="BlackHole Revolution5.html" class="demo-card">
+                <h2>🕳️ Black Hole Revolution 5</h2>
+                <p>Simulation de trou noir avec anneaux de photons, lentille gravitationnelle et effets de distorsion de l'espace-temps.</p>
+                <span class="tag">WebGL</span>
+                <span class="tag">Physique</span>
+            </a>
+
+            <a href="PortfolioII.html" class="demo-card">
+                <h2>💼 Portfolio II</h2>
+                <p>Portfolio interactif avec effets visuels avancés.</p>
+                <span class="tag">WebGL</span>
+                <span class="tag">Interactive</span>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
