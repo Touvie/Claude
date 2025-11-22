@@ -985,12 +985,17 @@
                 const x = controls.spherical.radius * Math.sin(controls.spherical.phi) * Math.cos(controls.spherical.theta);
                 const y = controls.spherical.radius * Math.cos(controls.spherical.phi);
                 const z = controls.spherical.radius * Math.sin(controls.spherical.phi) * Math.sin(controls.spherical.theta);
-                
+
                 coordsDisplay.innerHTML = `
+                    <strong>Axes de référence :</strong><br>
+                    <span style="color: #ff0000;">🔴 Rouge = X</span><br>
+                    <span style="color: #00ff00;">🟢 Vert = Y</span><br>
+                    <span style="color: #0099ff;">🔵 Bleu = Z</span><br>
+                    <br>
                     <strong>Position caméra :</strong><br>
-                    x: ${x.toFixed(2)}<br>
-                    y: ${y.toFixed(2)}<br>
-                    z: ${z.toFixed(2)}<br>
+                    <span style="color: #ff6666;">x: ${x.toFixed(2)}</span><br>
+                    <span style="color: #66ff66;">y: ${y.toFixed(2)}</span><br>
+                    <span style="color: #6699ff;">z: ${z.toFixed(2)}</span><br>
                     <br>
                     <strong>Sphérique :</strong><br>
                     radius: ${controls.spherical.radius.toFixed(2)}<br>
@@ -998,7 +1003,7 @@
                     phi: ${controls.spherical.phi.toFixed(3)}
                 `;
                 coordsDisplay.classList.add('visible');
-                
+
                 setTimeout(() => {
                     coordsDisplay.classList.remove('visible');
                 }, 5000);
