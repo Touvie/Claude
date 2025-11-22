@@ -586,6 +586,7 @@
         });
         
         const photonRing = new THREE.Points(photonRingGeometry, photonRingMaterial);
+        photonRing.rotation.x = Math.PI / 2; // Alignement avec la spirale
         scene.add(photonRing);
         
         const starsCount = 3000;
